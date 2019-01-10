@@ -1,34 +1,48 @@
 ---
 title: "Homework 1"
-author: "Andey Nunes"
-date: "1/9/2019"
+author:
+   - Andey Nunes, MS
+   - additional team member name(s) here
+date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: pdf_document
 ---
 
+## Document Setup
+The first step for this week is to set up the R Markdown document options.
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-packages <- c("broom", "tidyverse")
+packages <- c("broom", "readxl", "tidyverse")
 lapply(packages, require, character.only = T)
 
+options(digits = 2, scipen = 999, stringsAsFactors = F)
 ```
 
-## R Markdown
+Next step, load the data sets for the homework and summarize.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r load data}
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+# this code chunk allows us to load the data in a programmatic way and also to have intermediate code that will be useful for later. For example, the file_name function can use the name of an object and automatically create file names for saving them for later use.
+# 
+data_table_list <- list("catalog", "customers", "order_lines", "orders")
 
-```{r cars}
-summary(cars)
+file_name <- function(t, ex = ".xls") {
+   # generate a character vector by pasting the table or object name and a file extension designation, with a default value of ".xls"
+   as.character(paste0(t, ex))}
+
+# create a list of the file paths to be used
+file_paths <- map(data_table_list, file_name)
+
+# create a master list where each element is a data frame object that we will want to work with
+all_data <- map(file_paths, read_excel)
+
+# then finally, lets unpack that list into individual objects named in accordance with our data_table_list
+
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+## Homework Questions
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## References
