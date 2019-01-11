@@ -30,18 +30,19 @@ orders <- read_excel("orders.xls")
 ```{r summaries}
 
 catalog_summary <- summary(catalog)
-
+glimpse(catalog)
 pander(catalog_summary, caption = "catalog summary table")
 
 customers_summary <- summary(customers)
-
+glimpse(customers)
 pander(customers_summary, caption = "customers summary table")
 
 order_lines_summary <- summary(order_lines)
-
+glimpse(order_lines)
 pander(order_lines_summary, caption = "order_lines summary table")
 
 orders_summary <- summary(orders)
+glimpse(orders)
 pander(orders_summary, caption = "orders summary table")
 ```
 
