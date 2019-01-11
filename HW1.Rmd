@@ -2,6 +2,7 @@
 title: "Homework 1"
 author:
    - Andey Nunes, MS
+   - Jordan Hilton
    - additional team member name(s) here
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: pdf_document
