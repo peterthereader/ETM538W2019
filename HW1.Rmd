@@ -12,7 +12,7 @@ The first step for this week is to set up the R Markdown document options.
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-packages <- c("broom", "readxl", "tidyverse")
+packages <- c("broom", "pander", "readxl", "tidyverse")
 lapply(packages, require, character.only = T)
 
 options(digits = 2, scipen = 999, stringsAsFactors = F)
@@ -21,27 +21,42 @@ options(digits = 2, scipen = 999, stringsAsFactors = F)
 Next step, load the data sets for the homework and summarize.
 
 ```{r load data}
+catalog <- read_excel("catalog.xls")
+customers <- read_excel("customers.xls")
+order_lines <- read_excel("order_lines.xls")
+orders <- read_excel("orders.xls")
+```
+### Summary tables
+```{r summaries}
 
-# this code chunk allows us to load the data in a programmatic way and also to have intermediate code that will be useful for later. For example, the file_name function can use the name of an object and automatically create file names for saving them for later use.
-# 
-data_table_list <- list("catalog", "customers", "order_lines", "orders")
+catalog_summary <- summary(catalog)
 
-file_name <- function(t, ex = ".xls") {
-   # generate a character vector by pasting the table or object name and a file extension designation, with a default value of ".xls"
-   as.character(paste0(t, ex))}
+pander(catalog_summary, caption = "catalog summary table")
 
-# create a list of the file paths to be used
-file_paths <- map(data_table_list, file_name)
+customers_summary <- summary(customers)
 
-# create a master list where each element is a data frame object that we will want to work with
-all_data <- map(file_paths, read_excel)
+pander(customers_summary, caption = "customers summary table")
 
-# then finally, lets unpack that list into individual objects named in accordance with our data_table_list
+order_lines_summary <- summary(order_lines)
 
+pander(order_lines_summary, caption = "order_lines summary table")
+
+orders_summary <- summary(orders)
+pander(orders_summary, caption = "orders summary table")
+```
+
+| column names (variables) | assign a type: “question”, “answer”, or “link”  | variable class | count missing values | range = max - min |
+
+#### This section is for building some custom functions that will come in handy later
+```{r custom functions}
+countNA <- function(x) { sum(is.na(x)) }
+get_range <- function(x) {diff(range(x))}
 ```
 
 
+
 ## Homework Questions
+
 
 
 
