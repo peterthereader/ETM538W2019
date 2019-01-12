@@ -2,6 +2,7 @@
 title: "Homework 1"
 author:
    - Andey Nunes, MS
+   - Jordan Hilton
    - additional team member name(s) here
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: pdf_document
@@ -23,7 +24,7 @@ Next step, load the data sets for the homework and summarize.
 ```{r load data}
 catalog <- read_excel("catalog.xls")
 customers <- read_excel("customers.xls")
-order_lines <- read_excel("order_lines.xls")
+order_lines <- read_excel("order_lines.xlsx")
 orders <- read_excel("orders.xls")
 ```
 ### Summary tables
@@ -32,18 +33,22 @@ orders <- read_excel("orders.xls")
 catalog_summary <- summary(catalog)
 glimpse(catalog)
 pander(catalog_summary, caption = "catalog summary table")
+head(catalog)
 
 customers_summary <- summary(customers)
 glimpse(customers)
 pander(customers_summary, caption = "customers summary table")
+head(customers)
 
 order_lines_summary <- summary(order_lines)
 glimpse(order_lines)
 pander(order_lines_summary, caption = "order_lines summary table")
+head(order_lines)
 
 orders_summary <- summary(orders)
 glimpse(orders)
 pander(orders_summary, caption = "orders summary table")
+head(orders)
 ```
 
 | column names (variables) | assign a type: “question”, “answer”, or “link”  | variable class | count missing values | range = max - min |
