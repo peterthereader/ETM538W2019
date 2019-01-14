@@ -13,56 +13,42 @@ The first step for this week is to set up the R Markdown document options.
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-packages <- c("broom", "pander", "readxl", "tidyverse")
+packages <- c("broom", "knitr", "pander", "readxl", "tidyverse")
 lapply(packages, require, character.only = T)
 
 options(digits = 2, scipen = 999, stringsAsFactors = F)
 ```
 
-Next step, load the data sets for the homework and summarize.
+Next step, load the data sets for the homework. Summaries are included in the appendix.
 
 ```{r load data}
 catalog <- read_excel("catalog.xls")
 customers <- read_excel("customers.xls")
 order_lines <- read_excel("order_lines.xlsx")
+# reading this file in still poses problems...
 orders <- read_excel("orders.xls")
 ```
-### Summary tables
-```{r summaries}
 
-catalog_summary <- summary(catalog)
-glimpse(catalog)
-pander(catalog_summary, caption = "catalog summary table")
-head(catalog)
-
-customers_summary <- summary(customers)
-glimpse(customers)
-pander(customers_summary, caption = "customers summary table")
-head(customers)
-
-order_lines_summary <- summary(order_lines)
-glimpse(order_lines)
-pander(order_lines_summary, caption = "order_lines summary table")
-head(order_lines)
-
-orders_summary <- summary(orders)
-glimpse(orders)
-pander(orders_summary, caption = "orders summary table")
-head(orders)
-```
-
-| column names (variables) | assign a type: “question”, “answer”, or “link”  | variable class | count missing values | range = max - min |
-
-#### This section is for building some custom functions that will come in handy later
+#### Custom functions
+This section is for building some custom functions that will come in handy later
 ```{r custom functions}
+# count the number of missing data entries
 countNA <- function(x) {sum(is.na(x)) }
+
+# get the range of a numeric vector by taking the difference
+# between the high and low values from the range output
+# if the vector is not numeric, then provide NA
 get_range <- function(x) {ifelse(is.numeric(x), diff(range(x)), NA)}
 
-# This function creates the generic structure for the tables in Part B. The only content is the variable names, all the other columns are empty and can be updated in the homework.
+# This function creates the generic structure for the tables in Part B. 
+# The variable_class use of map_chr() will throw an error on the data-time 
+# object because that class has multiple assignments
+
 make_partBtable <- function(x){
    df <- tibble(variable_name = names(x),
-                    variable_type = NA, # assign one of: "question", "answer", "link"
-                    variable_class = map(x, class),
+                    variable_type = NA, 
+                # later assign one of: "question", "answer", "link"
+                    variable_class = map_chr(x, class),
                     count_missing = map_int(x, countNA),
                     variable_range = map_dbl(x, get_range))
    
@@ -75,37 +61,48 @@ make_partBtable <- function(x){
 
 ## Homework Questions
 
-<<<<<<< HEAD
+### Part A: General Questions
+
+#### 1. Key business questions
+
++ What is the company’s revenue?
++ What is the company’s profit?
++ How profitable is each product?
++ How many orders are there for each product?
++ How many active customers are there?
+
+#### 2. How does each table relate to answering those questions?
+
++ The catalog table lists each product along with information about that product (such as price, manufacturer, and name).
++ The customers table lists each of the company’s customers, along with information about that customer (such as location and name).
++ The orders table has one record for every order a customer made, with the total cost of that order and information about the number of items in the order and its shipping weight.
++ The order_lines table has one record for each different item that was purchased in a single order, along with links to the order.
+
+
+#### 3. How do I have to link the tables in order to be able to answer those questions?
+
+
+
 ### Part B: Specific Questions
 
-In an effort to code more efficiently I've defined a function to produce each table, however, I ran into a problem with the `variable_class` column. Compare the tables below with the class reported in the summary/glimpse tables above and you will see.
+For each data set, we include a table that gives the field (variable) names, whether they are a *link*, *answer* or *question* field, the data class, how many missing observations, and if numeric a range is given.
+
+#### Catalog
 
 ```{r catalog table}
 catalog_table <- make_partBtable(catalog)
-pander(catalog_table, caption = "Catalog Data Table Details")
+catalog_table$variable_type <- c("link", "link", "answer", "question", 
+                                 "question", "question", "answer")
+
+
+# pander(catalog_table, caption = "Catalog Data Table Details")
+kable(catalog_table, caption = "Catalog Data Table Details")
 ```
 
 
-```{r customers table}
-customers_table <- make_partBtable(customers)
-pander(customers_table, caption = "Customers Data Table Details")
-```
+```{r B catalog, include=F}
+# this is redundant code save just in case
 
-
-```{r order_lines table}
-order_lines_table <- make_partBtable(order_lines)
-pander(order_lines_table, caption = "Order_lines Data Table Details")
-```
-
-```{r orders table}
-
-orders_table <- make_partBtable(orders)
-pander(orders_table, caption = "Orders Data Table Details")
-```
-#=======
-### For question B
-
-```{r B catalog}
 ### this function finds the number of NAs for each column
 sapply(catalog, function(y) sum(is.na(y)))
 ### note that only one row has a blank value for product code or name, find out which that is
@@ -117,4 +114,104 @@ pander(cataloganswer)
 #>>>>>>> ae8ab7bbb4f6e6eb6429a38c088e54c7b85037b0
 ```
 
+
+#### Customers
+Many of these fields are character string fields or identification fields. While the range values are given, they are not applicable to this data table.
+
+```{r customers table}
+customers_table <- make_partBtable(customers)
+
+customers_table$variable_type <- c("link", "link", rep("question", 6), "question or answer", "link")
+# id variables and customer code are "links"
+# names and bt_* are questions of who and where
+
+#pander(customers_table, caption = "Customers Data Table Details")
+kable(customers_table, caption = "Customers Data Table Details")
+```
+
+#### Order_lines 
+
+There is still an issue with this table where the row labels are getting mangled.
+
+```{r order_lines table}
+str(order_lines)
+
+order_lines_table <- make_partBtable(order_lines)
+
+#pander(order_lines_table, caption = "Order_lines Data Table Details")
+```
+
+#### Orders
+
+
+```{r orders table}
+
+orders_table <- tibble(variable_name = names(orders),
+                    variable_type = c(rep("link",2), 
+                                      "question", #when 
+                                      rep("link",2), 
+                                      rep("question", 2),# which 
+                                      rep("answer", 7),# how much |total
+                                      rep("question",4)), # when 
+                    # assign one of: "question", "answer", "link"
+                    variable_class = c("numeric", "numeric",
+                                       "date-time", "character",
+                                       "numeric", "character",
+                                       "character","numeric", 
+                                       "character",rep("numeric", 5),
+                                       "date-time", "numeric", 
+                                       "logical", "logical"),
+                    count_missing = map_int(orders, countNA),
+                    variable_range = map_dbl(orders, get_range))
+
+
+#pander(orders_table, caption = "Orders Data Table Details")
+kable(orders_table, caption = "Orders Data Table Details")
+```
+
+### Part C. Filter/Select Operations
+
+For all these answers indicate clearly what fields you used, and why you chose those particular fields.  If there were other fields you could have considered, indicate why you did not choose those.
+
+#### 4. Top 10 states for orders by dollar volume
+
+#### 5. Top 10 countries for orders by dollar volume
+
+#### 6. Top 10 selling products by units; then by dollar volume
+
+#### 7. For each of the top two US states and each of the top two countries (excluding the US) in questions 1 and 2, what are the 5 top selling products by units?  By dollar volume? (5%)
+#### 8. Provide the customer ID’s, order dates, and order amounts for all customers who have ordered more than once. (5%)
+
+### Part D. Sales increasing strategies
+
+
+
 ## References
+
+## Appendix
+
+### Summary tables
+
+```{r summaries, include = TRUE}
+# this whole code chunk can be updated to be "include = FALSE" 
+# the use of head() is redundant since glimpse() shows more of the same information
+# but also tells you how many observations are in the data set
+# and doesn't truncate the list of variables
+
+pander(summary(catalog), caption = "catalog summary table")
+head(catalog)
+glimpse(catalog)
+
+pander(summary(customers), caption = "customers summary table")
+head(customers)
+glimpse(customers)
+
+pander(summary(order_lines), caption = "order_lines summary table")
+head(order_lines)
+glimpse(order_lines)
+
+pander(summary(orders), caption = "orders summary table")
+head(orders)
+glimpse(orders)
+```
+
