@@ -75,6 +75,7 @@ make_partBtable <- function(x){
 
 ## Homework Questions
 
+<<<<<<< HEAD
 ### Part B: Specific Questions
 
 In an effort to code more efficiently I've defined a function to produce each table, however, I ran into a problem with the `variable_class` column. Compare the tables below with the class reported in the summary/glimpse tables above and you will see.
@@ -100,6 +101,20 @@ pander(order_lines_table, caption = "Order_lines Data Table Details")
 
 orders_table <- make_partBtable(orders)
 pander(orders_table, caption = "Orders Data Table Details")
+```
+#=======
+### For question B
+
+```{r B catalog}
+### this function finds the number of NAs for each column
+sapply(catalog, function(y) sum(is.na(y)))
+### note that only one row has a blank value for product code or name, find out which that is
+which(is.na(catalog[,2]))
+catalog[267,]
+### load our table of answers about the catlog and display it
+cataloganswer<-read_excel("cataloganswer.xlsx")
+pander(cataloganswer)
+#>>>>>>> ae8ab7bbb4f6e6eb6429a38c088e54c7b85037b0
 ```
 
 ## References
