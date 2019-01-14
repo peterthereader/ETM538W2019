@@ -55,14 +55,54 @@ head(orders)
 
 #### This section is for building some custom functions that will come in handy later
 ```{r custom functions}
-countNA <- function(x) { sum(is.na(x)) }
-get_range <- function(x) {diff(range(x))}
+countNA <- function(x) {sum(is.na(x)) }
+get_range <- function(x) {ifelse(is.numeric(x), diff(range(x)), NA)}
+
+# This function creates the generic structure for the tables in Part B. The only content is the variable names, all the other columns are empty and can be updated in the homework.
+make_partBtable <- function(x){
+   df <- tibble(variable_name = names(x),
+                    variable_type = NA, # assign one of: "question", "answer", "link"
+                    variable_class = map(x, class),
+                    count_missing = map_int(x, countNA),
+                    variable_range = map_dbl(x, get_range))
+   
+   return(df)
+
+}
 ```
 
 
 
 ## Homework Questions
 
+<<<<<<< HEAD
+### Part B: Specific Questions
+
+In an effort to code more efficiently I've defined a function to produce each table, however, I ran into a problem with the `variable_class` column. Compare the tables below with the class reported in the summary/glimpse tables above and you will see.
+
+```{r catalog table}
+catalog_table <- make_partBtable(catalog)
+pander(catalog_table, caption = "Catalog Data Table Details")
+```
+
+
+```{r customers table}
+customers_table <- make_partBtable(customers)
+pander(customers_table, caption = "Customers Data Table Details")
+```
+
+
+```{r order_lines table}
+order_lines_table <- make_partBtable(order_lines)
+pander(order_lines_table, caption = "Order_lines Data Table Details")
+```
+
+```{r orders table}
+
+orders_table <- make_partBtable(orders)
+pander(orders_table, caption = "Orders Data Table Details")
+```
+#=======
 ### For question B
 
 ```{r B catalog}
@@ -74,6 +114,7 @@ catalog[267,]
 ### load our table of answers about the catlog and display it
 cataloganswer<-read_excel("cataloganswer.xlsx")
 pander(cataloganswer)
+#>>>>>>> ae8ab7bbb4f6e6eb6429a38c088e54c7b85037b0
 ```
 
 ## References
