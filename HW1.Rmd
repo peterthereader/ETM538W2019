@@ -9,10 +9,18 @@ output: pdf_document
 ---
 
 ## Document Setup
-The first step for this week is to set up the R Markdown document options.
+The first step for this week is to set up the R Markdown document options. Be sure that prior to executing code in this document that the following R packages are installed and updated in your R session:
+
++ broom
++ knitr
++ pander
++ readxl
++ tidyverse
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+# be sure to install/update these packages in your R session
 packages <- c("broom", "knitr", "pander", "readxl", "tidyverse")
 lapply(packages, require, character.only = T)
 
