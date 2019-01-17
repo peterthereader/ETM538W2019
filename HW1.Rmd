@@ -1,27 +1,32 @@
 ---
 title: "Homework 1"
 author:
-   - Andey Nunes, MS
-   - Jordan Hilton
-   - additional team member name(s) here
+- Andey Nunes, MS
+- Jordan Hilton
+- additional team member name(s) here
 date: "`r format(Sys.time(), '%B %d, %Y')`"
-output: pdf_document
+output:
+  pdf_document: default
+  word_document: default
 ---
 
 ## Document Setup
 The first step for this week is to set up the R Markdown document options. Be sure that prior to executing code in this document that the following R packages are installed and updated in your R session:
 
-+ broom
 + knitr
 + pander
 + readxl
 + tidyverse
 
+Tidyverse is an ecosystem of packages that work nicely together for data science tools. When the tidyverse package is installed, all the packages and their dependencies are automatically loaded into the R session. The packages included in the tidyverse package are listed here.
+
+`r tidyverse::tidyverse_packages()`
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 # be sure to install/update these packages in your R session
-packages <- c("broom", "knitr", "pander", "readxl", "tidyverse")
+packages <- c("knitr", "pander", "readxl", "rebus", "tidyverse")
 lapply(packages, require, character.only = T)
 
 options(digits = 2, scipen = 999, stringsAsFactors = F)
@@ -32,10 +37,53 @@ Next step, load the data sets for the homework. Summaries are included in the ap
 ```{r load data}
 catalog <- read_excel("catalog.xls")
 customers <- read_excel("customers.xls")
-order_lines <- read_excel("order_lines.xlsx")
+order_lines <- read_excel("order_lines.xlsx", skip = 2)
+order_lines_sheet3 <- read_excel("order_lines.xlsx", sheet = 3)
 # reading this file in still poses problems...
 orders <- read_excel("orders.xls")
 ```
+
+```{r order_lines cleanup}
+# inspect the head and tail of the data set
+glimpse(order_lines)
+tail(order_lines)
+
+# notice that R has imported the first row as "Row Labels" and "Total"
+# and the last row is the grand total at the end of the data set
+# Lets move that first row into the names for order_lines
+names(order_lines) <- as.character(order_lines[1,]) %>%
+  str_replace_all(" ","_") %>% str_replace_all("`","") %>% str_to_lower()
+# now remove that row
+order_lines <- order_lines[-1,]
+# now lets pull out that grand total and save it as its own number
+order_lines_grand_total <- order_lines[length(order_lines$row_labels),2]
+# now lets remove that row as well, so that all of our rows are just our actual data observations
+order_lines <- order_lines[-length(order_lines$row_labels),]
+# check out the head and tail again
+glimpse(order_lines)
+tail(order_lines)
+
+# when this .xlsx file is opened in Google Sheets there are 677 lines of data
+# once the row labels and grand total lines are removed, glimpse shows
+# 1354 observations, which is 2 lines for each observation
+# I'm guessing there is a name behind each id number visible in the google sheet
+# lets test this by creating 2 data frames from this table, one with the 
+# rows with only the id numbers the other with the id names
+# then compare to check that their "Total" columns are the same
+#id_numbers <- one_or_more(DGT) %R% optional(one_or_more(DGT))
+
+#OL_id_numbers <- order_lines %>%
+#  filter(str_length("row_labels") <= 4)
+
+#OL_prod_name <- order_lines %>%
+#  filter(str_detect("row_labels", "//w"))
+
+#test_same_totals <- OL_id_numbers == OL_prod_name
+
+# now we can separate the "Row Labels"
+```
+
+
 
 #### Custom functions
 This section is for building some custom functions that will come in handy later
@@ -51,14 +99,15 @@ get_range <- function(x) {ifelse(is.numeric(x), diff(range(x)), NA)}
 # This function creates the generic structure for the tables in Part B. 
 # The variable_class use of map_chr() will throw an error on the data-time 
 # object because that class has multiple assignments
+# value_type is temporarily NA, reassign one of: "question", "answer", "link"
 
 make_partBtable <- function(x){
    df <- tibble(variable_name = names(x),
-                    variable_type = NA, 
-                # later assign one of: "question", "answer", "link"
-                    variable_class = map_chr(x, class),
-                    count_missing = map_int(x, countNA),
-                    variable_range = map_dbl(x, get_range))
+                variable_type = NA,
+                variable_class = map_chr(x, class),
+                count_missing = map_int(x, countNA),
+                count_unique = map_dbl(x, ~length(unique(.x)) ),
+                variable_range = map_dbl(x, get_range))
    
    return(df)
 
@@ -96,7 +145,7 @@ make_partBtable <- function(x){
 For each data set, we include a table that gives the field (variable) names, whether they are a *link*, *answer* or *question* field, the data class, how many missing observations, and if numeric a range is given.
 
 #### Catalog
-
+This data set has `r length(catalog$id)` observations on `r length(catalog)` variables with details as follows:
 ```{r catalog table}
 catalog_table <- make_partBtable(catalog)
 catalog_table$variable_type <- c("link", "link", "answer", "question", 
@@ -126,6 +175,7 @@ pander(cataloganswer)
 #### Customers
 Many of these fields are character string fields or identification fields. While the range values are given, they are not applicable to this data table.
 
+This data set has `r length(customers$cust_id)` observations on `r length(customers)` variables with details as follows:
 ```{r customers table}
 customers_table <- make_partBtable(customers)
 
@@ -141,6 +191,7 @@ kable(customers_table, caption = "Customers Data Table Details")
 
 There is still an issue with this table where the row labels are getting mangled.
 
+
 ```{r order_lines table}
 str(order_lines)
 
@@ -150,7 +201,7 @@ order_lines_table <- make_partBtable(order_lines)
 ```
 
 #### Orders
-
+This data set has `r length(orders$order_id)` observations on `r length(orders)` variables with details as follows:
 
 ```{r orders table}
 
@@ -221,5 +272,19 @@ glimpse(order_lines)
 pander(summary(orders), caption = "orders summary table")
 head(orders)
 glimpse(orders)
+```
+
+```{r unique values}
+unique_cat <- map_dbl(catalog, ~length(unique(.x)))
+kable(unique_cat, caption = "Catalog Data: unique entry counts by data field")
+
+unique_cust <- map_dbl(customers, ~length(unique(.x)))
+kable(unique_cust, caption = "Customers Data: unique entry counts by data field")
+
+unique_OL <- map_dbl(order_lines_sheet3, ~length(unique(.x)))
+kable(unique_OL, caption = "Order Lines Data: unique entry counts by data field")
+
+unique_orders <- map_dbl(orders, ~length(unique(.x)))
+kable(unique_orders, caption = "Orders Data Table: unique entry counts by data field")
 ```
 
