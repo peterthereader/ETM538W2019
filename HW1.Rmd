@@ -239,6 +239,7 @@ We need the "state" field from the customers table, along with summed order tota
 ```{r query c4}
 top10states<- customers %>%
   inner_join(orders, by="cust_id") %>%   ## join the customers and orders table using the field cust_id
+  filter(bt_country == "United States") %>%  ##filter to only orders from customers in the US
   select(bt_state, total_amount)        ##reduces the resulting join into the two fields of interest
 
 top10states <- aggregate(top10states$total_amount, list(state=top10states$bt_state), sum)  ##group by state and count of orders
