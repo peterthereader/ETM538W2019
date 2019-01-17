@@ -1,9 +1,10 @@
 ---
 title: "Homework 1"
 author:
-   - Andey Nunes, MS
-   - Jordan Hilton
-   - additional team member name(s) here
+   - Andey Nunes, MS  
+   - Jordan Hilton  
+   - Mengyu Li  
+   - Peter Boss  
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: pdf_document
 ---
