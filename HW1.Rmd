@@ -126,12 +126,12 @@ make_partBtable <- function(x){
 #### 1. Key business questions
 
 + What is the company’s revenue?
-+ What is the company’s profit?
-+ How profitable is each product?
 + How many orders are there for each product?
++ What is the total revenue for each product?
++ Which products are not generating sales?
 + How many active customers are there?
 + Which market segment (international, domestic, or military) has the most sales growth over time?
-+ 
+
 
 #### 2. How does each table relate to answering those questions?
 
@@ -143,7 +143,12 @@ make_partBtable <- function(x){
 
 #### 3. How do I have to link the tables in order to be able to answer those questions?
 
-
++ What is the company’s revenue? - simply sum total order amounts from the orders table
++ How many orders are there for each product? - sum ordered units from the order_lines table, join with the catalog table for information about the product
++ What is the total revenue for each product? - sum ordered dollar amounts from the order_lines table, join with the catalog table for information about the product
++ Which products are not generating sales? - join the catalog table with the order_lines table, find records from the catalog table with zero or few ordered units
++ How many active customers are there? - join the order table with customers table, find records from the customers table with a minimum threshold of orders
++ Which market segment (international, domestic, or military) has the most sales growth over time? - join the order table with customers table, find records from the customers table with a minimum threshold of orders
 
 ### Part B: Specific Questions
 
@@ -317,15 +322,15 @@ top10_Order_Dollar_byCountry
 #### 6. Top 10 selling products by units; then by dollar volume
 ```{r}
 head(order_lines)
-Top10_SellProduct_ByUnit <- order_lines %>% 
-  group_by(product_id) %>% 
+Top10_SellProduct_ByUnit <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
+  group_by(name) %>% 
   summarise(totUnit =  sum(shipped_qty)) %>% 
   arrange(desc(totUnit)) %>% 
   top_n(10)
 Top10_SellProduct_ByUnit 
 
-Top10_SellProduct_ByDollar <- order_lines %>% 
-  group_by(product_id) %>% 
+Top10_SellProduct_ByDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
+  group_by(name) %>% 
   summarise(totDollar =  sum(`Shipped Total`)) %>% 
   arrange(desc(totDollar)) %>% 
   top_n(10)
@@ -334,13 +339,114 @@ Top10_SellProduct_ByDollar
 
 ```
 #### 7. For each of the top two US states and each of the top two countries (excluding the US) in questions 1 and 2, what are the 5 top selling products by units?  By dollar volume? (5%)
+
+Our top two states are CA and TX. The top 5 products in CA by units are:
+
+```{r}
+Top5CAbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
+  inner_join(customers, by=c("customer_id"="cust_id")) %>%
+  filter(bt_state == "CA") %>%
+  group_by(name) %>% 
+  summarise(totUnit =  sum(shipped_qty)) %>% 
+  arrange(desc(totUnit)) %>% 
+  top_n(5)
+Top5CAbyUnits
+```
+And by dollar volume:
+```{r}
+Top5CAbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
+  inner_join(customers, by=c("customer_id"="cust_id")) %>%
+  filter(bt_state == "CA") %>%
+  group_by(name) %>% 
+  summarise(totDollar =  sum(`Shipped Total`)) %>% 
+  arrange(desc(totDollar)) %>% 
+  top_n(5)
+Top5CAbyDollar
+```
+The same two queries for Texas:
+```{r}
+Top5TXbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
+  inner_join(customers, by=c("customer_id"="cust_id")) %>%
+  filter(bt_state == "TX") %>%
+  group_by(name) %>% 
+  summarise(totUnit =  sum(shipped_qty)) %>% 
+  arrange(desc(totUnit)) %>% 
+  top_n(5)
+Top5TXbyUnits
+```
+
+```{r}
+Top5TXbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
+  inner_join(customers, by=c("customer_id"="cust_id")) %>%
+  filter(bt_state == "CA") %>%
+  group_by(name) %>% 
+  summarise(totDollar =  sum(`Shipped Total`)) %>% 
+  arrange(desc(totDollar)) %>% 
+  top_n(5)
+Top5TXbyDollar
+```
+
+Now the same thing for Canada and Singapore:
+
+```{r}
+Top5CADbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
+  inner_join(customers, by=c("customer_id"="cust_id")) %>%
+  filter(bt_country == "Canada") %>%
+  group_by(name) %>% 
+  summarise(totUnit =  sum(shipped_qty)) %>% 
+  arrange(desc(totUnit)) %>% 
+  top_n(5)
+Top5CADbyUnits
+```
+
+```{r}
+Top5CADbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
+  inner_join(customers, by=c("customer_id"="cust_id")) %>%
+  filter(bt_country == "Canada") %>%
+  group_by(name) %>% 
+  summarise(totDollar =  sum(`Shipped Total`)) %>% 
+  arrange(desc(totDollar)) %>% 
+  top_n(5)
+Top5CADbyDollar
+```
+
+```{r}
+Top5SingaporebyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
+  inner_join(customers, by=c("customer_id"="cust_id")) %>%
+  filter(bt_country == "Singapore") %>%
+  group_by(name) %>% 
+  summarise(totUnit =  sum(shipped_qty)) %>% 
+  arrange(desc(totUnit)) %>% 
+  top_n(5)
+Top5SingaporebyUnits
+```
+
+```{r}
+Top5SingaporebyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
+  inner_join(customers, by=c("customer_id"="cust_id")) %>%
+  filter(bt_country == "Singapore") %>%
+  group_by(name) %>% 
+  summarise(totDollar =  sum(`Shipped Total`)) %>% 
+  arrange(desc(totDollar)) %>% 
+  top_n(5)
+Top5SingaporebyDollar
+```
 #### 8. Provide the customer ID’s, order dates, and order amounts for all customers who have ordered more than once. (5%)
+
+```{r}
+GoodCustomers <- inner_join(orders, customers, by = "cust_id") %>% 
+ count(cust_id, sort = TRUE) %>%
+  filter(n >= 2)
+GoodCustomers
+```
+
 
 ### Part D. Sales increasing strategies
 A quick list of sales increasing strategies include;
 
 + We know we have one time and repeat customers, but perhaps are there any other ways to segment customers and offer special promotions to see which customer segments respond to particular sales promotions.
-+ 
++ It appears that many of the top selling products are accessories instead of knives themselves; it might be good to expand the line of sheaths and multitools.
++ Sales are heavily concentrated in the US but there's a long tail of international buyers; there may be a growth opportunity in marketing in Europe and SE Asia.
 
 
 ## References
