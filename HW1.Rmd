@@ -1,27 +1,33 @@
 ---
 title: "Homework 1"
 author:
-   - Andey Nunes, MS
-   - Jordan Hilton
-   - additional team member name(s) here
+- Andey Nunes, MS
+- Jordan Hilton
+- Mengyu Li  
+- Peter Boss 
 date: "`r format(Sys.time(), '%B %d, %Y')`"
-output: pdf_document
+output:
+  pdf_document: default
+  word_document: default
 ---
 
 ## Document Setup
 The first step for this week is to set up the R Markdown document options. Be sure that prior to executing code in this document that the following R packages are installed and updated in your R session:
 
-+ broom
 + knitr
 + pander
 + readxl
 + tidyverse
 
+Tidyverse is an ecosystem of packages that work nicely together for data science tools. When the tidyverse package is installed, all the packages and their dependencies are automatically loaded into the R session. The packages included in the tidyverse package are listed here.
+
+`r tidyverse::tidyverse_packages()`
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 # be sure to install/update these packages in your R session
-packages <- c("broom", "knitr", "pander", "readxl", "tidyverse")
+packages <- c("knitr", "pander", "readxl", "rebus", "tidyverse")
 lapply(packages, require, character.only = T)
 
 options(digits = 2, scipen = 999, stringsAsFactors = F)
@@ -32,10 +38,54 @@ Next step, load the data sets for the homework. Summaries are included in the ap
 ```{r load data}
 catalog <- read_excel("catalog.xls")
 customers <- read_excel("customers.xls")
-order_lines <- read_excel("order_lines.xlsx")
-# reading this file in still poses problems...
+order_lines <- read_excel("order_lines.xls", sheet = "Sheet 1")
 orders <- read_excel("orders.xls")
 ```
+At first try, the `order_lines` data table did not load properly. We had to open the file in Excel to find that there are three sheets, two of which are pivot tables of the sheet containing all the data. These pivot tables are ahead of the actual data, so we manually reordered the sheets to put the data (labeled as *Sheet1* in .xls file). Next, we had to fix the column `customer_id` because it had a typo in the VLOOKUP command file name argument that referenced that information from the `orders` data file. Again, in Excel, that formula was fixed, and the cell reference for that column updated. Then the file was resaved and used in our analysis.
+
+
+
+```{r order_lines cleanup, eval=FALSE, include=FALSE}
+# inspect the head and tail of the data set
+glimpse(order_lines)
+tail(order_lines)
+
+# notice that R has imported the first row as "Row Labels" and "Total"
+# and the last row is the grand total at the end of the data set
+# Lets move that first row into the names for order_lines
+names(order_lines) <- as.character(order_lines[1,]) %>%
+  str_replace_all(" ","_") %>% str_replace_all("`","") %>% str_to_lower()
+# now remove that row
+order_lines <- order_lines[-1,]
+# now lets pull out that grand total and save it as its own number
+order_lines_grand_total <- order_lines[length(order_lines$row_labels),2]
+# now lets remove that row as well, so that all of our rows are just our actual data observations
+order_lines <- order_lines[-length(order_lines$row_labels),]
+# check out the head and tail again
+glimpse(order_lines)
+tail(order_lines)
+
+# when this .xlsx file is opened in Google Sheets there are 677 lines of data
+# once the row labels and grand total lines are removed, glimpse shows
+# 1354 observations, which is 2 lines for each observation
+# I'm guessing there is a name behind each id number visible in the google sheet
+# lets test this by creating 2 data frames from this table, one with the 
+# rows with only the id numbers the other with the id names
+# then compare to check that their "Total" columns are the same
+#id_numbers <- one_or_more(DGT) %R% optional(one_or_more(DGT))
+
+#OL_id_numbers <- order_lines %>%
+#  filter(str_length("row_labels") <= 4)
+
+#OL_prod_name <- order_lines %>%
+#  filter(str_detect("row_labels", "//w"))
+
+#test_same_totals <- OL_id_numbers == OL_prod_name
+
+# now we can separate the "Row Labels"
+```
+
+
 
 #### Custom functions
 This section is for building some custom functions that will come in handy later
@@ -51,14 +101,16 @@ get_range <- function(x) {ifelse(is.numeric(x), diff(range(x)), NA)}
 # This function creates the generic structure for the tables in Part B. 
 # The variable_class use of map_chr() will throw an error on the data-time 
 # object because that class has multiple assignments
+# value_type is temporarily NA, reassign one of: "question", "answer", "link"
 
 make_partBtable <- function(x){
    df <- tibble(variable_name = names(x),
-                    variable_type = NA, 
-                # later assign one of: "question", "answer", "link"
-                    variable_class = map_chr(x, class),
-                    count_missing = map_int(x, countNA),
-                    variable_range = map_dbl(x, get_range))
+                variable_type = NA,
+                variable_class = map_chr(x, class),
+                count_missing = map_int(x, countNA),
+                count_unique = map_dbl(x, ~length(unique(.x)) ), # this
+                # column can be removed from the tables using #
+                variable_range = map_dbl(x, get_range))
    
    return(df)
 
@@ -78,6 +130,8 @@ make_partBtable <- function(x){
 + How profitable is each product?
 + How many orders are there for each product?
 + How many active customers are there?
++ Which market segment (international, domestic, or military) has the most sales growth over time?
++ 
 
 #### 2. How does each table relate to answering those questions?
 
@@ -85,7 +139,7 @@ make_partBtable <- function(x){
 + The customers table lists each of the company’s customers, along with information about that customer (such as location and name).
 + The orders table has one record for every order a customer made, with the total cost of that order and information about the number of items in the order and its shipping weight.
 + The order_lines table has one record for each different item that was purchased in a single order, along with links to the order.
-
++ The `orders` data has an `order_date` and a `total_amount` for each unique `order_id`, which can be used to join the `order_lines` table to capture the `customer_id`. The `bt_state` field can be reclassified as one of three categories: "domestic" for US states, "international" indicated by the value `INTL`, and "military" indicated by the value "APO". This rebinned field can be used to classify the orders by market segment, using a table made from joining on the `customer_id` field. This final table can be summarized for total order amounts by month or quarter for each market segment then visualized on a timeline to spot trends in sales.
 
 #### 3. How do I have to link the tables in order to be able to answer those questions?
 
@@ -93,10 +147,12 @@ make_partBtable <- function(x){
 
 ### Part B: Specific Questions
 
-For each data set, we include a table that gives the field (variable) names, whether they are a *link*, *answer* or *question* field, the data class, how many missing observations, and if numeric a range is given.
+For each data set, we include a table that gives the field (variable) names, whether they are a *link*, *answer* or *question* field, the data class, how many missing observations, how many unique entries are in each column, and if the variable is numeric, a range is given.
+
+The reason to include a column for unique entries is to identify two types of columns: unique identifiers, and fields that contain only one kind of entry. If the number of unique entries in a field is equal to the number of observations in the data table, then that variable can be considered a unique identifier and should not be considered to be a number for calculations nor a factor for grouping, rather it is a way to link unique rows between two separate data frames. A perfect exampe of this is the customer id field or the order id. Occasionally, date-time columns will yield this, but its also a good check for duplicate values in those types of columns. When a field contains only one unique entry (NA values are considered a type of entry) then it indicates a value that is descriptive of the entire table and is meaningless in differentiaing observations. It may not be a useless variable, because it could be indicative that our table is a filtered subset of a much larger table where that field had other values, but we would not know unless we knew how the table we are looking at was constructed. The large numbers of unique values also gives us a sense of the size of state space for that field and will indicate where descritizing actions may need to be focused.
 
 #### Catalog
-
+This data set has `r length(catalog$id)` observations on `r length(catalog)` variables with details as follows:
 ```{r catalog table}
 catalog_table <- make_partBtable(catalog)
 catalog_table$variable_type <- c("link", "link", "answer", "question", 
@@ -126,8 +182,10 @@ pander(cataloganswer)
 #### Customers
 Many of these fields are character string fields or identification fields. While the range values are given, they are not applicable to this data table.
 
+This data set has `r length(customers$cust_id)` observations on `r length(customers)` variables with details as follows:
 ```{r customers table}
 customers_table <- make_partBtable(customers)
+  
 
 customers_table$variable_type <- c("link", "link", rep("question", 6), "question or answer", "link")
 # id variables and customer code are "links"
@@ -138,39 +196,55 @@ kable(customers_table, caption = "Customers Data Table Details")
 ```
 
 #### Order_lines 
-
-There is still an issue with this table where the row labels are getting mangled.
-
+This data set has `r length(order_lines$cust_id)` observations on `r length(order_lines)` variables with details as follows:
 ```{r order_lines table}
-str(order_lines)
+order_lines_table <- tibble(
+  variable_name = names(order_lines),
+  variable_type = c("link", "question", # which line in the order? 
+                    "link", "question", # what line status
+                    "question & answer", # time intervals, when
+                    rep("answer", 2), # how many
+                    "question & answer", # time intervals, when
+                    rep("unused", 3),# empty columns
+                    "link", "question", # what is the list price
+                    rep("unused", 2),# empty columns
+                    "link", "questions", # which products
+                    rep("question",2),
+                    "link", "unused"), # last column is empty
+                    # assign one of: "question", "answer", "link"
+  variable_class = c(rep("numeric", 3), "character", "date-time", 
+                     "numeric", "numeric", "date-time",
+                     rep("logical", 3), "numeric", "numeric",
+                     "logical", "logical", "numeric", "character", 
+                     rep("numeric", 3), "logical"),
+  count_missing = map_int(order_lines, countNA),
+  count_unique = map_dbl(order_lines, ~length(unique(.x))),
+  variable_range = map_dbl(order_lines, get_range))
 
-order_lines_table <- make_partBtable(order_lines)
 
-#pander(order_lines_table, caption = "Order_lines Data Table Details")
+pander(order_lines_table, caption = "Order_lines Data Table Details")
 ```
 
 #### Orders
-
+This data set has `r length(orders$order_id)` observations on `r length(orders)` variables with details as follows:
 
 ```{r orders table}
 
-orders_table <- tibble(variable_name = names(orders),
-                    variable_type = c(rep("link",2), 
-                                      "question", #when 
-                                      rep("link",2), 
-                                      rep("question", 2),# which 
-                                      rep("answer", 7),# how much |total
-                                      rep("question",4)), # when 
-                    # assign one of: "question", "answer", "link"
-                    variable_class = c("numeric", "numeric",
-                                       "date-time", "character",
-                                       "numeric", "character",
-                                       "character","numeric", 
-                                       "character",rep("numeric", 5),
-                                       "date-time", "numeric", 
-                                       "logical", "logical"),
-                    count_missing = map_int(orders, countNA),
-                    variable_range = map_dbl(orders, get_range))
+orders_table <- tibble(
+  variable_name = names(orders),
+  variable_type = c(rep("link",2), "question", #when 
+                    rep("link",2),
+                    rep("question", 2),# which 
+                    rep("answer", 7),# how much |total
+                    rep("question",4)), # when 
+  # assign one of: "question", "answer", "link"
+  variable_class = c("numeric", "numeric","date-time", "character",
+                     "numeric", "character", "character",
+                     "numeric", "character",rep("numeric", 5), "date-time",
+                     "numeric", "logical", "logical"),
+  count_missing = map_int(orders, countNA),
+  count_unique = map_dbl(orders, ~length(unique(.x))),
+  variable_range = map_dbl(orders, get_range))
 
 
 #pander(orders_table, caption = "Orders Data Table Details")
@@ -201,15 +275,72 @@ names(top10states)<-list("State", "Order Volume")
   pander(top10states)
 ```
 
+```{r alt query c4}
+# this is just given as a thru-pipe example of the code above
+# we can leave this out of the assignment  by placing
+# "eval=FALSE, include=FALSE" after the code chunk name
+
+# join customers and orders using cust_id link
+# filter out the two non-state labels from bt_state
+# pull out the two fields of interest and group the data by state 
+# summarize the observations to get a total by state and arrange in 
+# descending order, then rename the state column and keep only rows 1:10
+orders_top_states <- customers %>%
+  inner_join(orders, by="cust_id") %>%
+  filter(bt_state != "APO",
+         bt_state != "INTL") %>%
+  select(bt_state, total_amount) %>%
+  group_by(bt_state) %>%
+  summarize(order_volume = sum(total_amount)) %>%
+  arrange(desc(order_volume)) %>%
+  rename(state = bt_state) %>%
+  slice(1:10)
+  
+kable(orders_top_states[1:10,], caption = "Top 10 states for orders by dollar volume")
+```
+
+
 #### 5. Top 10 countries for orders by dollar volume
+```{r}
+head(orders)
+head(customers)
+
+top10_Order_Dollar_byCountry <- inner_join(orders, customers, by = c('cust_id')) %>% 
+  group_by(bt_country) %>% 
+  summarise(totDollarVol =  sum(total_amount)) %>% 
+  arrange(desc(totDollarVol)) %>% 
+  top_n(10)
+top10_Order_Dollar_byCountry
+```
+
 
 #### 6. Top 10 selling products by units; then by dollar volume
+```{r}
+head(order_lines)
+Top10_SellProduct_ByUnit <- order_lines %>% 
+  group_by(product_id) %>% 
+  summarise(totUnit =  sum(shipped_qty)) %>% 
+  arrange(desc(totUnit)) %>% 
+  top_n(10)
+Top10_SellProduct_ByUnit 
 
+Top10_SellProduct_ByDollar <- order_lines %>% 
+  group_by(product_id) %>% 
+  summarise(totDollar =  sum(`Shipped Total`)) %>% 
+  arrange(desc(totDollar)) %>% 
+  top_n(10)
+Top10_SellProduct_ByDollar
+
+
+```
 #### 7. For each of the top two US states and each of the top two countries (excluding the US) in questions 1 and 2, what are the 5 top selling products by units?  By dollar volume? (5%)
 #### 8. Provide the customer ID’s, order dates, and order amounts for all customers who have ordered more than once. (5%)
 
 ### Part D. Sales increasing strategies
+A quick list of sales increasing strategies include;
 
++ We know we have one time and repeat customers, but perhaps are there any other ways to segment customers and offer special promotions to see which customer segments respond to particular sales promotions.
++ 
 
 
 ## References
@@ -239,5 +370,19 @@ glimpse(order_lines)
 pander(summary(orders), caption = "orders summary table")
 head(orders)
 glimpse(orders)
+```
+
+```{r unique values}
+unique_cat <- map_dbl(catalog, ~length(unique(.x)))
+kable(unique_cat, caption = "Catalog Data: unique entry counts by data field")
+
+unique_cust <- map_dbl(customers, ~length(unique(.x)))
+kable(unique_cust, caption = "Customers Data: unique entry counts by data field")
+
+unique_OL <- map_dbl(order_lines, ~length(unique(.x)))
+kable(unique_OL, caption = "Order Lines Data: unique entry counts by data field")
+
+unique_orders <- map_dbl(orders, ~length(unique(.x)))
+kable(unique_orders, caption = "Orders Data Table: unique entry counts by data field")
 ```
 
