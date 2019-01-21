@@ -3,7 +3,8 @@ title: "Homework 1"
 author:
 - Andey Nunes, MS
 - Jordan Hilton
-- additional team member name(s) here
+- Mengyu Li  
+- Peter Boss 
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
   pdf_document: default
@@ -130,7 +131,7 @@ make_partBtable <- function(x){
 + How many orders are there for each product?
 + How many active customers are there?
 + Which market segment (international, domestic, or military) has the most sales growth over time?
-+ Are there any 
++ 
 
 #### 2. How does each table relate to answering those questions?
 
