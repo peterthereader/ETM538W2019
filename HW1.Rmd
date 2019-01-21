@@ -38,7 +38,7 @@ Next step, load the data sets for the homework. Summaries are included in the ap
 ```{r load data}
 catalog <- read_excel("catalog.xls")
 customers <- read_excel("customers.xls")
-order_lines <- read_excel("order_lines.xls", sheet = "Sheet 1")
+order_lines <- read_excel("order_lines.xls")#, sheet = "Sheet 1")
 orders <- read_excel("orders.xls")
 ```
 At first try, the `order_lines` data table did not load properly. We had to open the file in Excel to find that there are three sheets, two of which are pivot tables of the sheet containing all the data. These pivot tables are ahead of the actual data, so we manually reordered the sheets to put the data (labeled as *Sheet1* in .xls file). Next, we had to fix the column `customer_id` because it had a typo in the VLOOKUP command file name argument that referenced that information from the `orders` data file. Again, in Excel, that formula was fixed, and the cell reference for that column updated. Then the file was resaved and used in our analysis.
