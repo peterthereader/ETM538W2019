@@ -260,7 +260,7 @@ top10_Order_Dollar_byCountry <- inner_join(orders, customers, by = c('cust_id'))
   summarise(totDollarVol =  sum(total_amount)) %>% 
   arrange(desc(totDollarVol)) %>% 
   top_n(10)
-top10_Order_Dollar_byCountry
+pander(top10_Order_Dollar_byCountry, caption="Top 10 Countries by Dollar Volume")
 ```
 
 
@@ -272,14 +272,14 @@ Top10_SellProduct_ByUnit <- inner_join(order_lines, catalog, by = c('product_id'
   summarise(totUnit =  sum(shipped_qty)) %>% 
   arrange(desc(totUnit)) %>% 
   top_n(10)
-Top10_SellProduct_ByUnit 
+pander(Top10_SellProduct_ByUnit, caption="Top 10 Products by Unit Volume")
 
 Top10_SellProduct_ByDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
   group_by(name) %>% 
   summarise(totDollar =  sum(`Shipped Total`)) %>% 
   arrange(desc(totDollar)) %>% 
   top_n(10)
-Top10_SellProduct_ByDollar
+pander(Top10_SellProduct_ByDollar, caption="Top 10 Products by Dollar Volume")
 
 ```
 #### 7. For each of the top two US states and each of the top two countries (excluding the US) in questions 1 and 2, what are the 5 top selling products by units?  By dollar volume? (5%)
@@ -294,7 +294,7 @@ Top5CAbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>%
   summarise(totUnit =  sum(shipped_qty)) %>% 
   arrange(desc(totUnit)) %>% 
   top_n(5)
-Top5CAbyUnits
+pander(Top5CAbyUnits, caption="Top 5 Products by Unit in CA")
 ```
 And by dollar volume:
 ```{r}
@@ -305,7 +305,7 @@ Top5CAbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>
   summarise(totDollar =  sum(`Shipped Total`)) %>% 
   arrange(desc(totDollar)) %>% 
   top_n(5)
-Top5CAbyDollar
+pander(Top5CAbyDollar, caption="Top 5 Products by Dollar in CA")
 ```
 The same two queries for Texas:
 ```{r}
@@ -316,7 +316,7 @@ Top5TXbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>%
   summarise(totUnit =  sum(shipped_qty)) %>% 
   arrange(desc(totUnit)) %>% 
   top_n(5)
-Top5TXbyUnits
+pander(Top5TXbyUnits, caption="Top 5 Products by Unit in TX")
 ```
 
 ```{r}
@@ -327,7 +327,7 @@ Top5TXbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>
   summarise(totDollar =  sum(`Shipped Total`)) %>% 
   arrange(desc(totDollar)) %>% 
   top_n(5)
-Top5TXbyDollar
+pander(Top5TXbyDollar, caption="Top 5 Products by Dollar in TX")
 ```
 
 Now the same thing for Canada and Singapore:
@@ -340,7 +340,7 @@ Top5CADbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>
   summarise(totUnit =  sum(shipped_qty)) %>% 
   arrange(desc(totUnit)) %>% 
   top_n(5)
-Top5CADbyUnits
+pander(Top5CADbyUnits, caption="Top 5 Products by Unit in Canada")
 ```
 
 ```{r}
@@ -351,7 +351,7 @@ Top5CADbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %
   summarise(totDollar =  sum(`Shipped Total`)) %>% 
   arrange(desc(totDollar)) %>% 
   top_n(5)
-Top5CADbyDollar
+pander(Top5CADbyDollar, caption="Top 5 Products by Dollar in Canada")
 ```
 
 ```{r}
@@ -362,7 +362,7 @@ Top5SingaporebyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id
   summarise(totUnit =  sum(shipped_qty)) %>% 
   arrange(desc(totUnit)) %>% 
   top_n(5)
-Top5SingaporebyUnits
+pander(Top5SingaporebyUnits, caption="Top 5 Products by Unit in Singapore")
 ```
 
 ```{r}
@@ -373,15 +373,23 @@ Top5SingaporebyDollar <- inner_join(order_lines, catalog, by = c('product_id'='i
   summarise(totDollar =  sum(`Shipped Total`)) %>% 
   arrange(desc(totDollar)) %>% 
   top_n(5)
-Top5SingaporebyDollar
+pander(Top5SingaporebyDollar, caption="Top 5 Products by Dollar in Singapore")
 ```
 #### 8. Provide the customer ID’s, order dates, and order amounts for all customers who have ordered more than once. (5%)
 
 ```{r}
-GoodCustomers <- inner_join(orders, customers, by = "cust_id") %>% 
- count(cust_id, sort = TRUE) %>%
-  filter(n >= 2)
-GoodCustomers
+# make a copy of orders that uses table() function to get counts of the customer IDs
+rc <- as.data.frame(table(orders$cust_id))
+# filter for the ones we want
+rc <- rc[rc$"Freq" > 1,]
+# copy it in a format that will behave well with the subset() in the next line
+rc2 <- as.character(rc$Var1)
+# pull a subset in our list
+repeat_customers <- subset(orders, orders$cust_id %in% rc2)
+kable(repeat_customers[c(1:10, 2210:2219),c(5,3,14)],
+      caption = "Repeat customers, with order dates and dollar totals (first 10 lines and last 10 lines)")
+
+# not in the code: the number of lines in the repeated customers table matches the total of rc$Freq (2219), so there's a working double-check
 ```
 
 
