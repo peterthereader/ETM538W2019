@@ -11,7 +11,7 @@ output:
   pdf_document: default
 ---
 
-## Document Setup
+#### Document Setup
 The first step for this week is to set up the R Markdown document options. Be sure that prior to executing code in this document that the following R packages are installed and updated in your R session:
 
 + knitr
@@ -49,81 +49,52 @@ At first try, the `order_lines` data table did not load properly. We had to open
 # inspect the head and tail of the data set
 glimpse(order_lines)
 tail(order_lines)
-
-# notice that R has imported the first row as "Row Labels" and "Total"
-# and the last row is the grand total at the end of the data set
-# Lets move that first row into the names for order_lines
-names(order_lines) <- as.character(order_lines[1,]) %>%
-  str_replace_all(" ","_") %>% str_replace_all("`","") %>% str_to_lower()
-# now remove that row
-order_lines <- order_lines[-1,]
-# now lets pull out that grand total and save it as its own number
-order_lines_grand_total <- order_lines[length(order_lines$row_labels),2]
-# now lets remove that row as well, so that all of our rows are just our actual data observations
-order_lines <- order_lines[-length(order_lines$row_labels),]
-# check out the head and tail again
-glimpse(order_lines)
-tail(order_lines)
-
-# when this .xlsx file is opened in Google Sheets there are 677 lines of data
-# once the row labels and grand total lines are removed, glimpse shows
-# 1354 observations, which is 2 lines for each observation
-# I'm guessing there is a name behind each id number visible in the google sheet
-# lets test this by creating 2 data frames from this table, one with the 
-# rows with only the id numbers the other with the id names
-# then compare to check that their "Total" columns are the same
-#id_numbers <- one_or_more(DGT) %R% optional(one_or_more(DGT))
-
-#OL_id_numbers <- order_lines %>%
-#  filter(str_length("row_labels") <= 4)
-
-#OL_prod_name <- order_lines %>%
-#  filter(str_detect("row_labels", "//w"))
-
-#test_same_totals <- OL_id_numbers == OL_prod_name
-
-# now we can separate the "Row Labels"
 ```
 
+Notice that R has imported the first row as "Row Labels" and "Total" and the last row is the grand total at the end of the data set. Let's move that first row into the names for order_lines
+
+```{r order_lines cleanup, eval=FALSE, include=FALSE}
+names(order_lines) <- as.character(order_lines[1,]) %>%
+  str_replace_all(" ","_") %>% str_replace_all("`","") %>% str_to_lower()
+
+order_lines <- order_lines[-1,]  # remove that row
+order_lines_grand_total <- order_lines[length(order_lines$row_labels),2] # pull out grand total 
+order_lines <- order_lines[-length(order_lines$row_labels),] # remove that row to show actual data observations
+glimpse(order_lines)# check out the head and tail again
+tail(order_lines)
+
+```
+When this .xlsx file is opened in Google Sheets there are 677 lines of data,once the row labels and grand total lines are removed, glimpse shows 1354 observations, which is 2 lines for each observation. 
 
 
-#### Custom functions
-This section is for building some custom functions that will come in handy later
+### Custom functions
+This section is for building some custom functions that will come in handy later.
+In this section, we get the range of a numeric vector by taking the difference between the high and low values from the range output, and if the vector is not numeric, then provide NA. 
+Next, we creates the generic structure for the tables in Part B. The variable_class use of *map_chr()* will throw an error on the data-time object because that class has multiple assignments value_type is temporarily NA, reassign one of: "question", "answer", "link".
+
+
 ```{r custom functions}
-# count the number of missing data entries
-countNA <- function(x) {sum(is.na(x)) }
-
-# get the range of a numeric vector by taking the difference
-# between the high and low values from the range output
-# if the vector is not numeric, then provide NA
+countNA <- function(x) {sum(is.na(x)) } # count the number of missing data entries
 get_range <- function(x) {ifelse(is.numeric(x), diff(range(x)), NA)}
-
-# This function creates the generic structure for the tables in Part B. 
-# The variable_class use of map_chr() will throw an error on the data-time 
-# object because that class has multiple assignments
-# value_type is temporarily NA, reassign one of: "question", "answer", "link"
 
 make_partBtable <- function(x){
    df <- tibble(variable_name = names(x),
                 variable_type = NA,
                 variable_class = map_chr(x, class),
                 count_missing = map_int(x, countNA),
-                count_unique = map_dbl(x, ~length(unique(.x)) ), # this
-                # column can be removed from the tables using #
+                count_unique = map_dbl(x, ~length(unique(.x)) ),
                 variable_range = map_dbl(x, get_range))
-   
    return(df)
 
 }
 ```
 
 
-
-## Homework Questions
+#### Homework Questions
 
 ### Part A: General Questions
 
-#### 1. Key business questions
+## 1. Key business questions
 
 + What is the company’s revenue?
 + How many orders are there for each product?
@@ -133,7 +104,7 @@ make_partBtable <- function(x){
 + Which market segment (international, domestic, or military) has the most sales growth over time?
 
 
-#### 2. How does each table relate to answering those questions?
+##2. How does each table relate to answering those questions?
 
 + The catalog table lists each product along with information about that product (such as price, manufacturer, and name).
 + The customers table lists each of the company’s customers, along with information about that customer (such as location and name).
@@ -141,7 +112,7 @@ make_partBtable <- function(x){
 + The order_lines table has one record for each different item that was purchased in a single order, along with links to the order.
 + The `orders` data has an `order_date` and a `total_amount` for each unique `order_id`, which can be used to join the `order_lines` table to capture the `customer_id`. The `bt_state` field can be reclassified as one of three categories: "domestic" for US states, "international" indicated by the value `INTL`, and "military" indicated by the value "APO". This rebinned field can be used to classify the orders by market segment, using a table made from joining on the `customer_id` field. This final table can be summarized for total order amounts by month or quarter for each market segment then visualized on a timeline to spot trends in sales.
 
-#### 3. How do I have to link the tables in order to be able to answer those questions?
+##3. How do I have to link the tables in order to be able to answer those questions?
 
 + What is the company’s revenue? - simply sum total order amounts from the orders table
 + How many orders are there for each product? - sum ordered units from the order_lines table, join with the catalog table for information about the product
@@ -156,47 +127,26 @@ For each data set, we include a table that gives the field (variable) names, whe
 
 The reason to include a column for unique entries is to identify two types of columns: unique identifiers, and fields that contain only one kind of entry. If the number of unique entries in a field is equal to the number of observations in the data table, then that variable can be considered a unique identifier and should not be considered to be a number for calculations nor a factor for grouping, rather it is a way to link unique rows between two separate data frames. A perfect exampe of this is the customer id field or the order id. Occasionally, date-time columns will yield this, but its also a good check for duplicate values in those types of columns. When a field contains only one unique entry (NA values are considered a type of entry) then it indicates a value that is descriptive of the entire table and is meaningless in differentiaing observations. It may not be a useless variable, because it could be indicative that our table is a filtered subset of a much larger table where that field had other values, but we would not know unless we knew how the table we are looking at was constructed. The large numbers of unique values also gives us a sense of the size of state space for that field and will indicate where descritizing actions may need to be focused.
 
-#### Catalog
+##Catalog
 This data set has `r length(catalog$id)` observations on `r length(catalog)` variables with details as follows:
 ```{r catalog table}
 catalog_table <- make_partBtable(catalog)
 catalog_table$variable_type <- c("link", "link", "answer", "question", 
                                  "question", "question", "answer")
-
-
-# pander(catalog_table, caption = "Catalog Data Table Details")
 kable(catalog_table, caption = "Catalog Data Table Details")
 ```
 
-
-```{r B catalog, include=F}
-# this is redundant code save just in case
-
-### this function finds the number of NAs for each column
-sapply(catalog, function(y) sum(is.na(y)))
-### note that only one row has a blank value for product code or name, find out which that is
-which(is.na(catalog[,2]))
-catalog[267,]
-### load our table of answers about the catlog and display it
-cataloganswer<-read_excel("cataloganswer.xlsx")
-pander(cataloganswer)
-#>>>>>>> ae8ab7bbb4f6e6eb6429a38c088e54c7b85037b0
-```
-
-
-#### Customers
+## Customers
 Many of these fields are character string fields or identification fields. While the range values are given, they are not applicable to this data table.
 
 This data set has `r length(customers$cust_id)` observations on `r length(customers)` variables with details as follows:
 ```{r customers table}
 customers_table <- make_partBtable(customers)
   
-
 customers_table$variable_type <- c("link", "link", rep("question", 6), "question or answer", "link")
 # id variables and customer code are "links"
 # names and bt_* are questions of who and where
 
-#pander(customers_table, caption = "Customers Data Table Details")
 kable(customers_table, caption = "Customers Data Table Details")
 ```
 
@@ -230,11 +180,9 @@ order_lines_table <- tibble(
 pander(order_lines_table, caption = "Order_lines Data Table Details")
 ```
 
-#### Orders
+### Orders
 This data set has `r length(orders$order_id)` observations on `r length(orders)` variables with details as follows:
-
 ```{r orders table}
-
 orders_table <- tibble(
   variable_name = names(orders),
   variable_type = c(rep("link",2), "question", #when 
@@ -251,8 +199,6 @@ orders_table <- tibble(
   count_unique = map_dbl(orders, ~length(unique(.x))),
   variable_range = map_dbl(orders, get_range))
 
-
-#pander(orders_table, caption = "Orders Data Table Details")
 kable(orders_table, caption = "Orders Data Table Details")
 ```
 
@@ -266,18 +212,17 @@ We need the "state" field from the customers table, along with summed order tota
 
 ```{r query c4}
 top10states<- customers %>%
-  inner_join(orders, by="cust_id") %>%   ## join the customers and orders table using the field cust_id
+  inner_join(orders, by="cust_id") %>%   # join the customers and orders table using the field cust_id
   filter(bt_country == "United States") %>%  ##filter to only orders from customers in the US
-  select(bt_state, total_amount)        ##reduces the resulting join into the two fields of interest
+  select(bt_state, total_amount)        #reduces the resulting join into the two fields of interest
 
 top10states <- aggregate(top10states$total_amount, list(state=top10states$bt_state), sum)  ##group by state and count of orders
 
-top10states <- arrange(top10states, -top10states$x) %>%  ##orders the resulting list by order volume descending
-  head(10)                            ## shows the top 10 results
+top10states <- arrange(top10states, -top10states$x) %>%  #orders the resulting list by order volume descending
+head(10)                            # shows the top 10 results
 
 names(top10states)<-list("State", "Order Volume")
-
-  pander(top10states)
+pander(top10states)
 ```
 
 ```{r alt query c4}
@@ -335,7 +280,6 @@ Top10_SellProduct_ByDollar <- inner_join(order_lines, catalog, by = c('product_i
   arrange(desc(totDollar)) %>% 
   top_n(10)
 Top10_SellProduct_ByDollar
-
 
 ```
 #### 7. For each of the top two US states and each of the top two countries (excluding the US) in questions 1 and 2, what are the 5 top selling products by units?  By dollar volume? (5%)
@@ -448,10 +392,6 @@ A quick list of sales increasing strategies include;
 + It appears that many of the top selling products are accessories instead of knives themselves; it might be good to expand the line of sheaths and multitools.
 + Sales are heavily concentrated in the US but there's a long tail of international buyers; there may be a growth opportunity in marketing in Europe and SE Asia.
 
-
-## References
-
-## Appendix
 
 ### Summary tables
 
