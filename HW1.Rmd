@@ -376,9 +376,11 @@ rc2 <- as.character(rc$Var1)
 # pull a subset in our list
 repeat_customers <- subset(orders, orders$cust_id %in% rc2)
 kable(repeat_customers[c(1:10, 2210:2219),c(5,3,14)],
-      caption = "Repeat customers, with order dates and dollar totals (first 10 lines and last 10 lines)")
+      caption = "Repeat customers, with order dates and dollar totals 
+      (first 10 lines and last 10 lines)")
 
-# not in the code: the number of lines in the repeated customers table matches the total of rc$Freq (2219), so there's a working double-check
+# not in the code: the number of lines in the repeated customers table 
+# matches the total of rc$Freq (2219), so there's a working double-check
 ```
 
 
@@ -392,7 +394,7 @@ A quick list of sales increasing strategies include;
 # Appendix
 ### Summary tables
 
-```{r summaries, include = TRUE}
+```{r summaries}
 # this whole code chunk can be updated to be "include = FALSE" 
 # the use of head() is redundant since glimpse() shows more of the same information
 # but also tells you how many observations are in the data set
@@ -419,7 +421,7 @@ glimpse(orders)
 summary(orders)
 ```
 
-```{r unique values}
+```{r unique values, include=FALSE, eval=FALSE }
 unique_cat <- map_dbl(catalog, ~length(unique(.x)))
 kable(unique_cat, caption = "Catalog Data: unique entry counts by data field")
 
