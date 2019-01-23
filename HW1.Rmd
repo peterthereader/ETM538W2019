@@ -7,27 +7,26 @@ author:
 - Peter Boss 
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
-  word_document: default
   pdf_document: default
+  word_document: default
 ---
 
 #### Document Setup
 The first step for this week is to set up the R Markdown document options. Be sure that prior to executing code in this document that the following R packages are installed and updated in your R session:
 
 + knitr
-+ pander
 + readxl
 + tidyverse
 
 Tidyverse is an ecosystem of packages that work nicely together for data science tools. When the tidyverse package is installed, all the packages and their dependencies are automatically loaded into the R session. The packages included in the tidyverse package are listed here.
 
-`r tidyverse::tidyverse_packages()`
+> `r tidyverse::tidyverse_packages()`
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 # be sure to install/update these packages in your R session
-packages <- c("knitr", "pander", "readxl", "rebus", "tidyverse")
+packages <- c("knitr", "readxl", "tidyverse")
 lapply(packages, require, character.only = T)
 
 options(digits = 2, scipen = 999, stringsAsFactors = F)
@@ -41,36 +40,14 @@ customers <- read_excel("customers.xls")
 order_lines <- read_excel("order_lines.xls")#, sheet = "Sheet 1")
 orders <- read_excel("orders.xls")
 ```
-At first try, the `order_lines` data table did not load properly. We had to open the file in Excel to find that there are three sheets, two of which are pivot tables of the sheet containing all the data. These pivot tables are ahead of the actual data, so we manually reordered the sheets to put the data (labeled as *Sheet1* in .xls file). Next, we had to fix the column `customer_id` because it had a typo in the VLOOKUP command file name argument that referenced that information from the `orders` data file. Again, in Excel, that formula was fixed, and the cell reference for that column updated. Then the file was resaved and used in our analysis.
-
-
-
-```{r order_lines cleanup, eval=FALSE, include=FALSE}
-# inspect the head and tail of the data set
-glimpse(order_lines)
-tail(order_lines)
-```
-
-Notice that R has imported the first row as "Row Labels" and "Total" and the last row is the grand total at the end of the data set. Let's move that first row into the names for order_lines
-
-```{r order_lines cleanup, eval=FALSE, include=FALSE}
-names(order_lines) <- as.character(order_lines[1,]) %>%
-  str_replace_all(" ","_") %>% str_replace_all("`","") %>% str_to_lower()
-
-order_lines <- order_lines[-1,]  # remove that row
-order_lines_grand_total <- order_lines[length(order_lines$row_labels),2] # pull out grand total 
-order_lines <- order_lines[-length(order_lines$row_labels),] # remove that row to show actual data observations
-glimpse(order_lines)# check out the head and tail again
-tail(order_lines)
-
-```
-When this .xlsx file is opened in Google Sheets there are 677 lines of data,once the row labels and grand total lines are removed, glimpse shows 1354 observations, which is 2 lines for each observation. 
+At first try, the `order_lines` data table did not load properly. We had to open the file in Excel to find that there are three sheets, two of which are pivot tables of the sheet containing all the data. These pivot tables are ahead of the actual data, so we manually reordered the sheets to put the data as the first sheet (labeled as *Sheet1* in .xls file). While in Excel, we also had to manually fix the column `customer_id` because the file name argument of the VLOOKUP command referenced a file path to the `orders` data file that was not accurate for our project folder. That formula was fixed, and the cell reference for that column updated. Then the file was resaved and used in our analysis.
 
 
 ### Custom functions
 This section is for building some custom functions that will come in handy later.
-In this section, we get the range of a numeric vector by taking the difference between the high and low values from the range output, and if the vector is not numeric, then provide NA. 
-Next, we creates the generic structure for the tables in Part B. The variable_class use of *map_chr()* will throw an error on the data-time object because that class has multiple assignments value_type is temporarily NA, reassign one of: "question", "answer", "link".
+In this section, we create a custom function called `countNA` to find the total missing values in a vector.
+We get the range of a numeric vector by taking the difference between the high and low values from the range output, and if the vector is not numeric, then provide NA. 
+Next, we create `make_partBtable` which is a function that generates the generic structure for the tables in Part B. The variable_class use of *map_chr()* will throw an error on the data-time object because that class has multiple assignments. The `value_type` column is temporarily NA, because depending on the field, we will reassign one of: "question", "answer", "link". We also add another important feature `count_unique` which provides information on the variation of entries in any field. The reason this is important is discussed further in section B.
 
 
 ```{r custom functions}
@@ -90,11 +67,11 @@ make_partBtable <- function(x){
 ```
 
 
-#### Homework Questions
+# Homework Questions
 
-### Part A: General Questions
+## Part A: General Questions
 
-## 1. Key business questions
+### 1. Key business questions
 
 + What is the company’s revenue?
 + How many orders are there for each product?
@@ -104,7 +81,7 @@ make_partBtable <- function(x){
 + Which market segment (international, domestic, or military) has the most sales growth over time?
 
 
-##2. How does each table relate to answering those questions?
+###2. How does each table relate to answering those questions?
 
 + The catalog table lists each product along with information about that product (such as price, manufacturer, and name).
 + The customers table lists each of the company’s customers, along with information about that customer (such as location and name).
@@ -112,7 +89,7 @@ make_partBtable <- function(x){
 + The order_lines table has one record for each different item that was purchased in a single order, along with links to the order.
 + The `orders` data has an `order_date` and a `total_amount` for each unique `order_id`, which can be used to join the `order_lines` table to capture the `customer_id`. The `bt_state` field can be reclassified as one of three categories: "domestic" for US states, "international" indicated by the value `INTL`, and "military" indicated by the value "APO". This rebinned field can be used to classify the orders by market segment, using a table made from joining on the `customer_id` field. This final table can be summarized for total order amounts by month or quarter for each market segment then visualized on a timeline to spot trends in sales.
 
-##3. How do I have to link the tables in order to be able to answer those questions?
+###3. How do I have to link the tables in order to be able to answer those questions?
 
 + What is the company’s revenue? - simply sum total order amounts from the orders table
 + How many orders are there for each product? - sum ordered units from the order_lines table, join with the catalog table for information about the product
@@ -120,8 +97,12 @@ make_partBtable <- function(x){
 + Which products are not generating sales? - join the catalog table with the order_lines table, find records from the catalog table with zero or few ordered units
 + How many active customers are there? - join the order table with customers table, find records from the customers table with a minimum threshold of orders
 + Which market segment (international, domestic, or military) has the most sales growth over time? - join the order table with customers table, find records from the customers table with a minimum threshold of orders
+  
+  
+In any case, the tables will be linked using common fields of unique identifiers such as `*_id` columns or new columns formed from prior aggregations. These common fields are keys and their operators are set functions such as union, intersection, and setdiff (or their `dplyr` equivalent joining functions).
 
-### Part B: Specific Questions
+
+## Part B: Specific Questions
 
 For each data set, we include a table that gives the field (variable) names, whether they are a *link*, *answer* or *question* field, the data class, how many missing observations, how many unique entries are in each column, and if the variable is numeric, a range is given.
 
@@ -151,7 +132,7 @@ kable(customers_table, caption = "Customers Data Table Details")
 ```
 
 #### Order_lines 
-This data set has `r length(order_lines$cust_id)` observations on `r length(order_lines)` variables with details as follows:
+This data set has `r length(order_lines$customer_id)` observations on `r length(order_lines)` variables with details as follows:
 ```{r order_lines table}
 order_lines_table <- tibble(
   variable_name = names(order_lines),
@@ -177,7 +158,7 @@ order_lines_table <- tibble(
   variable_range = map_dbl(order_lines, get_range))
 
 
-pander(order_lines_table, caption = "Order_lines Data Table Details")
+kable(order_lines_table, caption = "Order_lines Data Table Details")
 ```
 
 ### Orders
@@ -222,14 +203,10 @@ top10states <- arrange(top10states, -top10states$x) %>%  #orders the resulting l
 head(10)                            # shows the top 10 results
 
 names(top10states)<-list("State", "Order Volume")
-pander(top10states)
+kable(top10states)
 ```
 
 ```{r alt query c4}
-# this is just given as a thru-pipe example of the code above
-# we can leave this out of the assignment  by placing
-# "eval=FALSE, include=FALSE" after the code chunk name
-
 # join customers and orders using cust_id link
 # filter out the two non-state labels from bt_state
 # pull out the two fields of interest and group the data by state 
@@ -246,47 +223,48 @@ orders_top_states <- customers %>%
   rename(state = bt_state) %>%
   slice(1:10)
   
-kable(orders_top_states[1:10,], caption = "Top 10 states for orders by dollar volume")
+kable(orders_top_states, caption = "Top 10 states for orders by dollar volume")
 ```
 
 
 #### 5. Top 10 countries for orders by dollar volume
-```{r}
-head(orders)
-head(customers)
+```{r query 5}
+#head(orders)
+#head(customers)
 
 top10_Order_Dollar_byCountry <- inner_join(orders, customers, by = c('cust_id')) %>% 
   group_by(bt_country) %>% 
   summarise(totDollarVol =  sum(total_amount)) %>% 
   arrange(desc(totDollarVol)) %>% 
   top_n(10)
-pander(top10_Order_Dollar_byCountry, caption="Top 10 Countries by Dollar Volume")
+kable(top10_Order_Dollar_byCountry, caption="Top 10 Countries by Dollar Volume")
 ```
-
+  
 
 #### 6. Top 10 selling products by units; then by dollar volume
-```{r}
-head(order_lines)
+```{r query 6}
+#head(order_lines)
 Top10_SellProduct_ByUnit <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
   group_by(name) %>% 
   summarise(totUnit =  sum(shipped_qty)) %>% 
   arrange(desc(totUnit)) %>% 
   top_n(10)
-pander(Top10_SellProduct_ByUnit, caption="Top 10 Products by Unit Volume")
+kable(Top10_SellProduct_ByUnit, caption="Top 10 Products by Unit Volume")
 
 Top10_SellProduct_ByDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
   group_by(name) %>% 
   summarise(totDollar =  sum(`Shipped Total`)) %>% 
   arrange(desc(totDollar)) %>% 
   top_n(10)
-pander(Top10_SellProduct_ByDollar, caption="Top 10 Products by Dollar Volume")
-
+kable(Top10_SellProduct_ByDollar, caption="Top 10 Products by Dollar Volume")
 ```
+  
+
 #### 7. For each of the top two US states and each of the top two countries (excluding the US) in questions 1 and 2, what are the 5 top selling products by units?  By dollar volume? (5%)
 
 Our top two states are CA and TX. The top 5 products in CA by units are:
 
-```{r}
+```{r Q7 CA units}
 Top5CAbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
   inner_join(customers, by=c("customer_id"="cust_id")) %>%
   filter(bt_state == "CA") %>%
@@ -294,10 +272,12 @@ Top5CAbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>%
   summarise(totUnit =  sum(shipped_qty)) %>% 
   arrange(desc(totUnit)) %>% 
   top_n(5)
-pander(Top5CAbyUnits, caption="Top 5 Products by Unit in CA")
+kable(Top5CAbyUnits, caption="Top 5 Products by Unit in CA")
 ```
+  
+
 And by dollar volume:
-```{r}
+```{r Q7 CA dollars}
 Top5CAbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
   inner_join(customers, by=c("customer_id"="cust_id")) %>%
   filter(bt_state == "CA") %>%
@@ -305,10 +285,12 @@ Top5CAbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>
   summarise(totDollar =  sum(`Shipped Total`)) %>% 
   arrange(desc(totDollar)) %>% 
   top_n(5)
-pander(Top5CAbyDollar, caption="Top 5 Products by Dollar in CA")
+kable(Top5CAbyDollar, caption="Top 5 Products by Dollar in CA")
 ```
+  
+
 The same two queries for Texas:
-```{r}
+```{r Q7 TX units}
 Top5TXbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
   inner_join(customers, by=c("customer_id"="cust_id")) %>%
   filter(bt_state == "TX") %>%
@@ -316,10 +298,12 @@ Top5TXbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>%
   summarise(totUnit =  sum(shipped_qty)) %>% 
   arrange(desc(totUnit)) %>% 
   top_n(5)
-pander(Top5TXbyUnits, caption="Top 5 Products by Unit in TX")
+kable(Top5TXbyUnits, caption="Top 5 Products by Unit in TX")
 ```
+  
 
-```{r}
+
+```{r Q7 TX dollars}
 Top5TXbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
   inner_join(customers, by=c("customer_id"="cust_id")) %>%
   filter(bt_state == "CA") %>%
@@ -327,12 +311,12 @@ Top5TXbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>
   summarise(totDollar =  sum(`Shipped Total`)) %>% 
   arrange(desc(totDollar)) %>% 
   top_n(5)
-pander(Top5TXbyDollar, caption="Top 5 Products by Dollar in TX")
+kable(Top5TXbyDollar, caption="Top 5 Products by Dollar in TX")
 ```
-
+  
 Now the same thing for Canada and Singapore:
 
-```{r}
+```{r Q7 Canada units}
 Top5CADbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
   inner_join(customers, by=c("customer_id"="cust_id")) %>%
   filter(bt_country == "Canada") %>%
@@ -340,10 +324,11 @@ Top5CADbyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>
   summarise(totUnit =  sum(shipped_qty)) %>% 
   arrange(desc(totUnit)) %>% 
   top_n(5)
-pander(Top5CADbyUnits, caption="Top 5 Products by Unit in Canada")
+kable(Top5CADbyUnits, caption="Top 5 Products by Unit in Canada")
 ```
+  
 
-```{r}
+```{r Q7 Canada dollar}
 Top5CADbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
   inner_join(customers, by=c("customer_id"="cust_id")) %>%
   filter(bt_country == "Canada") %>%
@@ -351,10 +336,11 @@ Top5CADbyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %
   summarise(totDollar =  sum(`Shipped Total`)) %>% 
   arrange(desc(totDollar)) %>% 
   top_n(5)
-pander(Top5CADbyDollar, caption="Top 5 Products by Dollar in Canada")
+kable(Top5CADbyDollar, caption="Top 5 Products by Dollar in Canada")
 ```
+  
 
-```{r}
+```{r Q7 Singapore units}
 Top5SingaporebyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
   inner_join(customers, by=c("customer_id"="cust_id")) %>%
   filter(bt_country == "Singapore") %>%
@@ -362,10 +348,11 @@ Top5SingaporebyUnits <- inner_join(order_lines, catalog, by = c('product_id'='id
   summarise(totUnit =  sum(shipped_qty)) %>% 
   arrange(desc(totUnit)) %>% 
   top_n(5)
-pander(Top5SingaporebyUnits, caption="Top 5 Products by Unit in Singapore")
+kable(Top5SingaporebyUnits, caption="Top 5 Products by Unit in Singapore")
 ```
+  
 
-```{r}
+```{r Q7 Singapore dollar}
 Top5SingaporebyDollar <- inner_join(order_lines, catalog, by = c('product_id'='id')) %>% 
   inner_join(customers, by=c("customer_id"="cust_id")) %>%
   filter(bt_country == "Singapore") %>%
@@ -373,11 +360,13 @@ Top5SingaporebyDollar <- inner_join(order_lines, catalog, by = c('product_id'='i
   summarise(totDollar =  sum(`Shipped Total`)) %>% 
   arrange(desc(totDollar)) %>% 
   top_n(5)
-pander(Top5SingaporebyDollar, caption="Top 5 Products by Dollar in Singapore")
+kable(Top5SingaporebyDollar, caption="Top 5 Products by Dollar in Singapore")
 ```
+  
+
 #### 8. Provide the customer ID’s, order dates, and order amounts for all customers who have ordered more than once. (5%)
 
-```{r}
+```{r query 8}
 # make a copy of orders that uses table() function to get counts of the customer IDs
 rc <- as.data.frame(table(orders$cust_id))
 # filter for the ones we want
@@ -409,21 +398,25 @@ A quick list of sales increasing strategies include;
 # but also tells you how many observations are in the data set
 # and doesn't truncate the list of variables
 
-pander(summary(catalog), caption = "catalog summary table")
-head(catalog)
+#kable(summary(catalog), caption = "catalog summary table")
+#head(catalog)
 glimpse(catalog)
+summary(catalog)
 
-pander(summary(customers), caption = "customers summary table")
-head(customers)
+#kable(summary(customers), caption = "customers summary table")
+#head(customers)
 glimpse(customers)
+summary(customers)
 
-pander(summary(order_lines), caption = "order_lines summary table")
-head(order_lines)
+#kable(summary(order_lines), caption = "order_lines summary table")
+#head(order_lines)
 glimpse(order_lines)
+summary(order_lines)
 
-pander(summary(orders), caption = "orders summary table")
-head(orders)
+#kable(summary(orders), caption = "orders summary table")
+#head(orders)
 glimpse(orders)
+summary(orders)
 ```
 
 ```{r unique values}
@@ -439,4 +432,29 @@ kable(unique_OL, caption = "Order Lines Data: unique entry counts by data field"
 unique_orders <- map_dbl(orders, ~length(unique(.x)))
 kable(unique_orders, caption = "Orders Data Table: unique entry counts by data field")
 ```
+
+
+
+```{r order_lines, eval=FALSE, include=FALSE}
+# inspect the head and tail of the data set
+glimpse(order_lines)
+tail(order_lines)
+```
+
+
+```{r order_lines cleanup, eval=FALSE, include=FALSE}
+names(order_lines) <- as.character(order_lines[1,]) %>%
+  str_replace_all(" ","_") %>% str_replace_all("`","") %>% str_to_lower()
+
+# Notice that R has imported the first row as "Row Labels" and "Total" and the last row is the grand total at the end of the data set. Let's move that first row into the names for order_lines
+
+order_lines <- order_lines[-1,]  # remove that row
+order_lines_grand_total <- order_lines[length(order_lines$row_labels),2] # pull out grand total 
+order_lines <- order_lines[-length(order_lines$row_labels),] # remove that row to show actual data observations
+glimpse(order_lines)# check out the head and tail again
+tail(order_lines)
+
+#When this .xlsx file is opened in Google Sheets there are 677 lines of data,once the row labels and grand total lines are removed, glimpse shows 1354 observations, which is 2 lines for each observation. 
+```
+
 
