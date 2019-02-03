@@ -1,0 +1,179 @@
+---
+html_document:
+  df_print: paged
+  toc: yes
+  toc_depth: '3'
+author: "Andey Nunes, Mengyu Li, Jordan Hilton, Peter Boss"
+date: "2/2/2019"
+title: "Homework 3"
+---
+
+#### Document and Exercise Set Up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+packages <- c("knitr","pander", "tidyverse")
+
+lapply(packages, require, character.only = T)
+
+options(digits = 2, scipen = 999)
+```
+
+
+```{r load data}
+Claims_and_Days <- read_csv("Claims_and_Days.csv",
+col_types = cols(CharlsonIndex = col_character()))
+
+names(Claims_and_Days)
+```
+
+```{r clean data order factors}
+Claims_and_Days <- Claims_and_Days %>%
+  mutate(CharlsonIndex = case_when(
+    CharlsonIndex == "0" ~ "0" ,
+    CharlsonIndex == "2-Jan" ~ "1-2",
+    CharlsonIndex == "4-Mar" ~ "3-4",
+    CharlsonIndex == "5+" ~ "5+"),
+    AgeAtFirstClaim = case_when(
+      AgeAtFirstClaim == "19-Oct" ~ "10-19",
+      AgeAtFirstClaim != "19-Oct" ~ AgeAtFirstClaim),
+    LengthOfStay = if_else(is.na(LengthOfStay), "0 or unknown", LengthOfStay)) %>%
+  mutate(CharlsonIndex = ordered(CharlsonIndex, levels = 
+                                   c("0","1-2", "3-4", "5+")),
+         AgeAtFirstClaim = ordered(AgeAtFirstClaim, levels = c(
+           "0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79",  "80+")),
+         LengthOfStay = ordered(LengthOfStay, levels = c(
+           "0 or unknown", "1 day", "2 days", "3 days","4 days", "5 days", "6 days", "1- 2 weeks", "2- 4 weeks", "4- 8 weeks", "8-12 weeks", "12-26 weeks", "26+ weeks"))
+)
+```
+
+
+# Tidy 1 R Algorithm: Homework 3
+
+## Quantize the answer field: `Risk_Level`
+
+```{r risk level Vlookup tab}
+VlookupSim <- Claims_and_Days %>%
+  mutate(Risk_Level = case_when(
+    DaysInHospital_Y2 == 0 ~ "A",
+    DaysInHospital_Y2 == 1 ~ "B",
+    DaysInHospital_Y2 == 2 | DaysInHospital_Y2 == 3 ~ "C",
+    DaysInHospital_Y2 == 4 | DaysInHospital_Y2 == 5 ~ "D",
+    DaysInHospital_Y2 >= 6 ~ "E"),
+      Risk_Level_label = case_when(
+        Risk_Level == "A" ~ "no risk",
+        Risk_Level == "B" ~ "very low risk",
+        Risk_Level == "C" ~ "low risk",
+        Risk_Level == "D" ~ "medium risk", 
+        Risk_Level == "E" ~ "high risk")) %>%
+  mutate(Risk_Level_label = ordered(Risk_Level_label, levels = c(
+    "no risk", "very low risk", "low risk", "medium risk", "high risk")))
+
+str(VlookupSim)
+```
+
+
+## Create pivot tables 
+
+**proportion of observations for risk groups**
+```{r prop_obs table function}
+prop_obs <- function(df = VlookupSim, x, 
+                     y = VlookupSim$Risk_Level_label) {
+   prop <- with(df, table(x, y))
+   prop <- cbind(prop, total = rowSums(prop))
+   high_prop <- prop[,5]/prop[,6]*100
+   prop <- cbind(prop, high_risk_proportion = high_prop)
+   #proptibble <- tibble(prop) %>% 
+    #  arrange(desc(high_risk_proportion))
+   
+   return(prop)
+}
+
+```
+
+#### Primary Condition Group Counts and Proportion of High Risk
+```{r PrimaryConditionGroup pivot}
+pcg <- prop_obs(x = VlookupSim$PrimaryConditionGroup)
+kable(pcg)
+```
+  
+
+#### Charlson Index Group Counts and Proportion of High Risk
+
+```{r Charlson Index Group pivot}
+ci <- prop_obs(x = VlookupSim$CharlsonIndex)
+kable(ci)
+```
+  
+
+#### Length of Stay Counts and Proportion of High Risk
+
+```{r Length of Stay pivot, eval=F}
+los <- prop_obs(x = VlookupSim$LengthOfStay)
+kable(los)
+```
+
+
+## Simulate the 1R Algorithm
+
+```{r ignore risk level A}
+data1R <- filter(VlookupSim, Risk_Level != "A")
+```
+
+
+**Ignoring Risk Level A** build the 1R Rule for each of
+
++ "PrimaryConditionGroup"
++ "CharlsonIndex" 
++ "LengthOfStay"
+
+> Select the Best Rule and Paste in here
+
+## Questions:
+
+### Q4.1
+ Why does our selected rule work better (reference error rate)
+ 
+### Q4.2
+For the 1R Rule is it better to have a lower or higher cardinality?
+
+### Q4.3
+We are ignoring risk level A because it is a subset of the data that is independent of the group we are trying to predict and it consists of nearly 77% of the original observations. By working with a smaller subset that contains only the observations with any risk level other than "no risk", we have a smaller search space for our algorithm.
+
+## Extra Credit
+
+**Ignoring Risk Level A** rebin the risk level buckets and rebuild the 1R Rule and see if there is a difference.
+
+
+
+# Appendix
+
+## Risk Group Counts
+**graphical inspection function**
+```{r ggplot risk_group function}
+risk_group_counts <- ggplot(VlookupSim, aes(x = Risk_Level_label)) +
+   geom_text(aes(label = ..count..), stat = "count", vjust = -0.25) +
+   geom_bar()
+```
+
+
+```{r Primary Condition Group plot,  eval=F}
+risk_group_counts +
+  facet_wrap(~PrimaryConditionGroup)
+```
+
+
+```{r Charlson Index plot, eval=F}
+risk_group_counts +
+  facet_wrap(~CharlsonIndex)
+```
+
+
+```{r Length Of Stay plot, eval=F}
+risk_group_counts +
+  facet_wrap(~LengthOfStay)
+```
+
+
+

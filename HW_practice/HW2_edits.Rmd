@@ -1,0 +1,151 @@
+---
+title: "Homework 2"
+author: 
+- "Mengyu Li"
+- "Andey Nunes"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+## Load packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning = F, error =F)
+list.of.packages <- c("dplyr", "rlang", "reshape2","broom", "knitr", "readxl", "tidyverse")
+lapply(list.of.packages,function(x){library(x,character.only=TRUE)})
+```
+
+
+## Read raw data from csv
+```{r load RDS}
+df <- readRDS("Heritage.rds")
+str(df)
+#rawData <- df
+```
+
+## Prepare data
+```{r data prep}
+#df <- rawData
+# select independent and dependent variables
+iv_fac <- c('specialty', 'placesvc', 'LengthOfStay', 'dsfs', 'PrimaryConditionGroup', 'CharlsonIndex','sex', 'AgeAtFirstClaim') 
+iv_num <- c('paydelay')
+dv <- c('DaysInHospital_Y2')
+iv <- c(iv_fac, iv_num)
+var <- c(iv, dv)
+df <- df %>% 
+  select(var)
+df[is.na(df)] <- 0 # fill NA values by 0
+
+df[iv_fac] <- lapply(df[iv_fac], factor)
+str(df)
+#dfData <- df
+```
+
+## Field summary
+```{r summary}
+#summary(dfData)
+field_n_obs <- summary(df)
+field_n_obs
+```
+
+## A function to return average values for each row in a group set of any combination of variables.
+```{r Average DaysInHospital_Y2 custom function}
+
+fnAvgByGrp <- function(df, dfGrpVar, valVar, rng){
+  dfResult <- NULL
+  #colName <- c(paste0('X', seq(1:ncol(dfGrpVar ))), paste0('Avg', varVal), 'Condition')
+  for (rIdx in 1 : nrow(dfGrpVar)){
+    grpVar <- as.character(unlist(dfGrpVar[rIdx,]))
+    grpVar
+    dfT <- df %>% 
+      group_by_at(grpVar) %>%
+      summarise(AvgY2 = mean(!! sym(valVar)), nCount = n()) %>% 
+      filter(between(AvgY2, rng[1], rng[2])) %>% 
+      arrange(desc(AvgY2)) %>% 
+      mutate(CONDITION = paste0(grpVar, collapse = ' AND '))
+    if (nrow(dfT) > 0){
+      dfResult <- bind_rows(dfResult, dfT)
+    }
+  }
+  return(dfResult)
+}
+```
+
+## Question 2: What is the best 1-condition rule you can find?  
+```{r One R}
+#df <- dfData
+iv # independent variable(s)
+nCondition <- 1 # number of condition in rule
+dfGrpVar <- data.frame(t(combn(c(iv), nCondition))) # group vraible(s)
+valVar <- c('DaysInHospital_Y2') # Value variable
+rng <- c(4, 500) # range: lower limit and upper limit
+
+res <- fnAvgByGrp(df, dfGrpVar, valVar, rng)
+
+if (! is.null(res)) {
+  res <- arrange(res, desc(AvgY2), desc(nCount))
+}
+res
+res1 <- res
+```
+
+I get NULL here, but not sure why
+
+## Question 3(1): What is the best 2-condition rule you can find?  
+```{r Two R}
+#df <- dfData
+iv
+nCondition <- 2
+dfGrpVar <- data.frame(t(combn(c(iv), nCondition)))
+valVar <- c('DaysInHospital_Y2')
+rng <- c(6, 500)
+
+res <- fnAvgByGrp(df, dfGrpVar, valVar, rng)
+res <- arrange(res, desc(AvgY2), desc(nCount))# arrange based on the largest AvgY2 & nCount
+#res
+res2 <- filter(res, AvgY2 >= 6, nCount > 10)
+
+kable(res2)
+```
+
+## Question 3(2): What is the best 3-condition rule you can find?  
+```{r Three R}
+#df <- dfData
+iv
+nCondition <- 3
+dfGrpVar <- data.frame(t(combn(c(iv), nCondition)))
+valVar <- c('DaysInHospital_Y2')
+rng <- c(6, 500)
+
+res <- fnAvgByGrp(df, dfGrpVar, valVar, rng)
+res <- arrange(res, desc(AvgY2), desc(nCount))
+res_n <- arrange(res, desc(nCount), desc(AvgY2))
+#res
+res3 <- filter(res_n, AvgY2 >= 6, nCount > 10)
+
+kable(res3)
+```
+
+
+## 4.	Can you find 12 different rules that predict high risk situations as defined above?  No rule is allowed to have more than 3 conditions.  No more than 3 of the rules can use exactly the same set of fields.  For instance, if you have 5 rules that predict high risk situations using the fields dsfs, charlson index, and paydelay, you can only use three of them in your list.  However, you can also include 3 more tha use, for example, dsfs, charlson index, and placesvc.  
+
+
+
+```{r list of rules}
+#df <- res3
+#head(res3)
+
+kable(res3 %>% 
+  group_by(CONDITION) %>% 
+  mutate(rank = rank(desc(AvgY2), ties.method = 'first')) %>% 
+  filter(rank <=3) %>% #No more than 3 of the rules can use exactly the same set of fields.  
+  head(12)
+)
+
+#res3[1:12,] #12 different rules that predict high risk situations 
+
+
+# can we try weighting this by n_count, or using the number of cases to rank ties?
+# seems like a rule that predicts 40 people at 7 days is stronger than a rule that predict 2 people at 10 days 
+```
+
+
