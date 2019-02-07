@@ -109,6 +109,13 @@ on_stay <- data.frame(as.character(claims_to_risk$RiskLevel),
 
 colnames(on_stay) <- c("RiskLevel", "Stay")
 
+###for question 4, we're going to add in 1 count for every combination of stay and risk level. this first line creates a table in the same format as df_stay, with one row for every combination of length of stay and risk level
+addon<-expand.grid(levels(on_stay$RiskLevel),levels(on_stay$Stay))
+colnames(addon) <- c("RiskLevel", "Stay")
+
+##and this second line adds that to the bottom of df_stay
+on_stay<-rbind(on_stay, addon)
+
 df_stay <- as.data.frame(as.character(on_stay$Stay))
 
 colnames(df_stay) <- c("Stay")
@@ -220,7 +227,18 @@ It's used by the Excel sheet as the key for the vlookup function to reference th
 
 ### 4. Missing values for long hospital stays
 
-From the lecture, the way we shoudl do this is to add 1 count for every possible combination of independent variable and risk level to our probably calculator.
+This happens because there are 0 occurences in the data of some combinations of length of stay and risk level. To fix this, we'll add a little seed to the data in the middle of the probability calculation for stay that adds 1 row for every possible combination. We did this in the code above at line 112 as follows:
+
+```{r fixmissingstays}
+###for question 4, we're going to add in 1 count for every combination of stay and risk level. this first line creates a table in the same format as df_stay, with one row for every combination of length of stay and risk level
+addon<-expand.grid(levels(on_stay$RiskLevel),levels(on_stay$Stay))
+colnames(addon) <- c("RiskLevel", "Stay")
+
+##and this second line adds that to the bottom of df_stay
+on_stay<-rbind(on_stay, addon)
+```
+
+As a minor note, we also had to adjust the formula in the excel model to include the additional rows this generated
 
 ### 5. Unlikely B
 
