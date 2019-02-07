@@ -13,34 +13,77 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(pander)
+
+packages <- c("DiagrammeR", "knitr", "pander", "tidyverse")
+
+lapply(packages, require, character.only = T)
+
+options(digits = 2, scipen = 999)
 ```
 
 ## Setup and definitions
 
+Training Set
+
+
 Let's define some of our inputs. I'm going to modify the lists for X to include the coefficient of "1" for the bias to make multiplication easier later, and I'm going to define our step function a to check thresholds.
 
 ```{r definitions}
-t<-c(0,1,1)
-x1<-c(1,0,0)
-x2<-c(1,0,1)
-x3<-c(1,1,1)
-x<-matrix(c(x1,x2,x3), ncol=3, byrow=TRUE)
-w<-c(.1,.1,-.3)
-a<-function(x) if(x>0){1}else{0}
-pander(cbind(x, t))
+# create target as a column vector
+t <- c(0,1,1)
+
+# create matrix x using row vectors
+x1 <- c(1,0,0)
+x2 <- c(1,0,1)
+x3 <- c(1,1,1)
+x <- matrix(c(x1,x2,x3), ncol = 3, byrow = TRUE)
+
+w <- c(.1,.1,-.3)
+
+# activation function
+a <- function(x) if (x > 0) {1} else {0}
+
+pander(cbind(x,t))
 ```
+
+```{r perceptron, include=FALSE, eval=FALSE}
+
+# nodes
+nodes <- DiagrammeR::create_nodes(
+  nodes = c("+1", "x1", "x2", "y"),
+  label = TRUE,
+  shape = rep("circle", 4))
+
+# edges
+edges <- create_edges_df(
+  from = c("+1", "x1", "x2"),
+  to = rep("y", 3),
+  rel = "weight",
+  data = w)
+
+graph <- create_graph(
+  nodes_df = nodes,
+  edges_df = edges)
+
+render_graph(graph)
+
+# add edge statements
+#+1->y [label = '0.1']; x1->y [label = '0.1']; x2->y[label = '-0.3']
+
+```
+
 
 ## Part a
 
 Let's calculate the accuracy by comparing $t$ to $y=a(w \cdot x)$: where a is the step function defined in the lecture:
 
 ```{r firstaccuracy}
-thresh1<-w%*%x1
-thresh2<-w%*%x2
-thresh3<-w%*%x3 ## probably a cleaner way to do this with simply w%*%x, but would need to define x differently
-thresh<-c(thresh1,thresh2,thresh3)
-y<-sapply(thresh, a)
+thresh1 <- w %*% x1
+thresh2 <- w %*% x2
+thresh3 <- w %*% x3 ## probably a cleaner way to do this with simply w%*%x,
+# but would need to define x differently
+thresh <- c(thresh1,thresh2,thresh3)
+y <- sapply(thresh, a)
 pander(rbind(thresh,y,t))
 ```
 
@@ -51,10 +94,23 @@ You can see that the accuracy is 0/3: none of the $y$ values match the $t$ value
 Let's apply the learning rule for one epoch:
 
 ```{r learningrule}
-eta<-.2
-w<-c(w[1]+eta*(t[1]-y[1])*x[1,1], w[2]+eta*(t[1]-y[1])*x[1,2], w[3]+eta*(t[1]-y[1])*x[1,3]) ##applying learning rule
-w<-c(w[1]+eta*(t[2]-y[2])*x[1,1], w[2]+eta*(t[2]-y[2])*x[2,2], w[3]+eta*(t[2]-y[2])*x[2,3]) ##for each original row in
-w<-c(w[1]+eta*(t[3]-y[3])*x[1,1], w[2]+eta*(t[3]-y[3])*x[3,2], w[3]+eta*(t[3]-y[3])*x[3,3]) ## training set
+eta <- .2
+
+w <- c(w[1] + eta * (t[1] - y[1]) * x[1,1],
+       w[2] + eta * (t[1] - y[1]) * x[1,2],
+       w[3] + eta * (t[1] - y[1]) * x[1,3])
+
+## applying learning rule
+w <- c(w[1] + eta * (t[2] - y[2]) * x[1,1],
+       w[2] + eta * (t[2] - y[2]) * x[2,2],
+       w[3] + eta * (t[2] - y[2]) * x[2,3])
+
+## for each original row in
+w <- c(w[1] + eta * (t[3] - y[3]) * x[1,1],
+       w[2] + eta * (t[3] - y[3]) * x[3,2],
+       w[3] + eta * (t[3] - y[3]) * x[3,3])
+
+## training set
 w
 ```
 
@@ -63,11 +119,13 @@ w
 Let's check the accuracy as above:
 
 ```{r secondaccuracy}
-thresh1<-w%*%x1
-thresh2<-w%*%x2
-thresh3<-w%*%x3 
-thresh<-c(thresh1,thresh2,thresh3)
-y<-sapply(thresh, a)
+thresh1 <- w %*% x1
+thresh2 <- w %*% x2
+thresh3 <- w %*% x3 
+thresh <- c(thresh1,thresh2,thresh3)
+
+y <- sapply(thresh, a)
+
 pander(rbind(thresh,y,t))
 ```
 
