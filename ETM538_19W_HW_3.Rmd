@@ -1,0 +1,391 @@
+---
+title: "Homework 3"
+author: "Andey Nunes, Mengyu Li, Jordan Hilton, Peter Boss"
+date: "2/2/2019"
+output: pdf_document
+html_document:
+  df_print: paged
+  toc: yes
+  toc_depth: '3'
+---
+
+#### Document and Exercise Set Up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+packages <- c("knitr","pander", "tidyverse")
+lapply(packages, require, character.only = T)
+options(digits = 2, scipen = 999)
+```
+
+
+```{r load data}
+Claims_and_Days <- read_csv("Claims_and_Days.csv",
+col_types = cols(placesvc = col_factor(),
+                 dsfs = col_factor(),
+                 PrimaryConditionGroup = col_factor(),
+                 CharlsonIndex = col_character(),
+                 sex = col_factor(),
+                 Risk_Level = col_factor()))
+names(Claims_and_Days)
+
+# fix this chunk so it doesn't print output for file loading
+```
+
+
+```{r clean data order factors}
+Claims_and_Days <- Claims_and_Days %>%
+  mutate(CharlsonIndex = case_when(
+    CharlsonIndex == "0" ~ "0" ,
+    CharlsonIndex == "2-Jan" ~ "1-2",
+    CharlsonIndex == "4-Mar" ~ "3-4",
+    CharlsonIndex == "5+" ~ "5+"),
+    AgeAtFirstClaim = case_when(
+      AgeAtFirstClaim == "19-Oct" ~ "10-19",
+      AgeAtFirstClaim != "19-Oct" ~ AgeAtFirstClaim),
+    LengthOfStay = if_else(is.na(LengthOfStay), "0 or unknown", LengthOfStay)) %>%
+  mutate(CharlsonIndex = ordered(CharlsonIndex, levels = 
+                                   c("0","1-2", "3-4", "5+")),
+         AgeAtFirstClaim = ordered(AgeAtFirstClaim, levels = c(
+           "0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79",  "80+")),
+         LengthOfStay = ordered(LengthOfStay, levels = c(
+           "0 or unknown", "1 day", "2 days", "3 days","4 days", "5 days", "6 days", "1- 2 weeks", 
+           "2- 4 weeks", "4- 8 weeks", "8-12 weeks", "12-26 weeks", "26+ weeks"))
+)
+```
+
+
+# Tidy 1 R Algorithm: Homework 3
+
+## 1. Quantize the answer field: `Risk_Level`
+
+```{r risk level Vlookup tab}
+VlookupSim <- Claims_and_Days %>%
+  mutate(Risk_Level = case_when(
+    DaysInHospital_Y2 == 0 ~ "A",
+    DaysInHospital_Y2 == 1 ~ "B",
+    DaysInHospital_Y2 == 2 | DaysInHospital_Y2 == 3 ~ "C",
+    DaysInHospital_Y2 == 4 | DaysInHospital_Y2 == 5 ~ "D",
+    DaysInHospital_Y2 >= 6 ~ "E"),
+      Risk_Level_label = case_when(
+        Risk_Level == "A" ~ "no risk",
+        Risk_Level == "B" ~ "very low risk",
+        Risk_Level == "C" ~ "low risk",
+        Risk_Level == "D" ~ "medium risk", 
+        Risk_Level == "E" ~ "high risk")) %>%
+  mutate(Risk_Level_label = ordered(Risk_Level_label, levels = c(
+    "no risk", "very low risk", "low risk", "medium risk", "high risk")))
+summary(VlookupSim)
+```
+
+
+## 2. Create pivot tables: field counts by risk group 
+
+**proportion of observations for risk groups**
+```{r prop_obs table function}
+prop_obs <- function(df = VlookupSim, x, 
+                     y = VlookupSim$Risk_Level_label) {
+   prop <- with(df, table(x, y))
+   prop <- cbind(prop, total = rowSums(prop))
+   high_prop <- prop[,5]/prop[,6]*100
+   prop <- cbind(prop, high_risk_proportion = high_prop)
+   #proptibble <- tibble(prop) %>% 
+    #  arrange(desc(high_risk_proportion))
+   
+   return(prop)
+}
+```
+
+#### Primary Condition Group pivot table
+
+```{r PrimaryConditionGroup pivot}
+pcg <- prop_obs(x = VlookupSim$PrimaryConditionGroup)
+kable(pcg)
+```
+
+
+#### Charlson Index Group pivot table
+
+```{r Charlson Index Group pivot, include=FALSE}
+ci <- prop_obs(x = VlookupSim$CharlsonIndex)
+kable(ci)
+```
+
+
+#### Length of Stay pivot table
+
+```{r Length of Stay pivot, eval=F, include=FALSE}
+los <- prop_obs(x = VlookupSim$LengthOfStay)
+kable(los)
+```
+
+
+
+## 3. Simulate the 1R Algorithm
+
+**Ignoring Risk Level A** build the 1R Rule for each of Primary Condition Group, Charlson Index Group, and Length of Stay.
+```{r ignore risk level A}
+data1R <- filter(VlookupSim, Risk_Level != "A")
+str(data1R)
+```
+
+
+```{r prop_obs_1R table function}
+# custom function that generates a table of counts, a vector of the risk label with highest count,
+# from each field state, which is the 1R decision, then it creates a vector for error calculation  
+
+prop_obs_1R <- function(df = data1R, x, 
+                        y = data1R$Risk_Level_label) {
+   prop <- with(df, table(x, y))
+   prop <- cbind(prop, total = rowSums(prop))
+   high_value <- rep(99, dim(prop)[1])  # set a vector to hold the decision
+   # loop across the vector to find the most likely result, and return that name
+   for(i in 1:length(high_value)){
+     high_value[i] = colnames(prop)[which.max(prop[i, 1:5])]
+   }
+   errors <- rep(99, dim(prop)[1])  # set a vector to hold the total errors
+   for(k in 1:length(errors)){
+     errors[k] = prop[k,6] - prop[k,which.max(prop[k, 1:5])]
+   }
+   error_rate <- rep(99, dim(prop)[1])  # set a vector to hold the error rate
+   # loop across the vector, summing up the non-1R talleys, and dividing by total observations
+   for(j in 1:length(error_rate)){
+     error_rate[j] = round(1 - max(prop[j, 1:5])/prop[j,6], 4)
+   }
+   # combine the table, the decision, and the error rate
+   prop <- cbind(prop, decision_1R = high_value, errors, error_rate)
+   # set the first col to NA since we're ignoring no-risk situations
+   prop[,1] <- NA
+   #proptibble <- tibble(prop) %>% 
+    #  arrange(desc(high_risk_proportion))
+   
+   return(prop)
+}
+```
+
+
+#### Primary Condition Group 1R Decisions and Error Rates
+
+```{r PrimaryConditionGroup 1R}
+pcg_1R <- prop_obs_1R(x = data1R$PrimaryConditionGroup)
+pcg_1R_tot <- sum(as.numeric(pcg_1R[,6]))
+pcg_1R_err <- sum(as.numeric(pcg_1R[,8]))
+pcg_1R_rate <- pcg_1R_err/pcg_1R_tot
+kable(pcg_1R)
+```
+
+
+#### Charlson Index Group 1R Decisions and Error Rates
+
+```{r CharlsonIndex 1R}
+ci_1R <- prop_obs_1R(x = data1R$CharlsonIndex)
+ci_1R_tot <- sum(as.numeric(ci_1R[,6]))
+ci_1R_err <- sum(as.numeric(ci_1R[,8]))
+ci_1R_rate <- ci_1R_err/ci_1R_tot
+kable(ci_1R)
+
+```
+
+
+
+#### Length of Stay 1R Decisions and Error Rates
+
+```{r LengthofStay 1R}
+los_1R <- prop_obs_1R(x = data1R$LengthOfStay)
+los_1R_tot <- sum(as.numeric(los_1R[,6]))
+los_1R_err <- sum(as.numeric(los_1R[,8]))
+los_1R_rate <- los_1R_err/los_1R_tot
+kable(los_1R)
+```
+
+
+### Comparison of the three 1R rules
+
+The Primary Condition Group 1R rule has `r pcg_1R_err` errors on `r pcg_1R_tot` observations, for an error rate of `r round(pcg_1R_rate, 4)`.  
+The Charlson Index 1R rule has `r ci_1R_err` errors on `r ci_1R_tot` observations, for an error rate of `r round(ci_1R_rate, 4)`.  
+The Length of Stay 1R rule has `r los_1R_err` errors on `r los_1R_tot` observations, for an error rate of `r round(los_1R_rate, 4)`.  
+
+The Charlson Index has the lowest error rate, so we select that as our 1R rule.  Details of the rule are in the table above.  
+
+
+### Q4.1.  Why does our selected rule work better (reference error rate).  
+
+The Charlson Index has a lower error rate (61%) than the other two options (63% and 65%).  
+
+### Q4.2.  For the 1R Rule is it better to have a lower or higher cardinality?  
+
+In this scenario, the lower cardinality may have contributed to a stronger rule.  In general, lower cardinality will speed up calculations because it creates a smaller search space.  The optimal cardinality will be whatever is most useful to the person using the analysis.  For instance, if `no risk`, `very low risk`, and `low risk` were going to be treated the same, it would make sense to bin them together to speed up the computations.  
+
+### Q4.3.  Why are we ignoring risk level A?  
+
+We are ignoring risk level A because it is a subset of the data that is independent of the group we are trying to predict and it consists of nearly 77% of the original observations. By working with a smaller subset that contains only the observations with any risk level other than "no risk", we have a smaller search space for our algorithm.
+
+## Extra Credit
+
+**Ignoring Risk Level A** rebin the risk level buckets and rebuild the 1R Rule and see if there is a difference. New categories are as follows:
+
++ 0 DaysInHospital_Y2 group **A** "no risk"
++ 1-3 DaysInHospital_Y2 group **B** "low risk"
++ 4-6 DaysInHospital_Y2 group **C** "medium risk"
++ more than 6 DaysInHospital_Y2 group **D** "high risk"
+
+
+
+```{r rebin risk levels}
+rebinRisk <- Claims_and_Days %>%
+  mutate(Risk_Level = case_when(
+    DaysInHospital_Y2 == 0 ~ "A",
+    DaysInHospital_Y2 > 0 & DaysInHospital_Y2 < 4 ~ "B",
+    DaysInHospital_Y2 > 3 & DaysInHospital_Y2 < 7 ~ "C",
+    DaysInHospital_Y2 > 6 ~ "D"),
+      Risk_Level_label = case_when(
+        Risk_Level == "A" ~ "no risk",
+        Risk_Level == "B" ~ "low risk",
+        Risk_Level == "C" ~ "medium risk", 
+        Risk_Level == "D" ~ "high risk")) %>%
+  mutate(Risk_Level_label = ordered(Risk_Level_label, levels = c(
+    "no risk", "low risk", "medium risk", "high risk"))) %>%
+  filter(Risk_Level != "A")
+```
+
+
+```{r rebin_1R table function}
+# custom function that generates a table of counts, a vector of the risk label with highest count,
+# from each field state, which is the 1R decision, then it creates a vector for error calculation  
+
+rebin_1R <- function(df = rebinRisk, x, 
+                        y = rebinRisk$Risk_Level_label) {
+   prop <- with(df, table(x, y))
+   prop <- cbind(prop, total = rowSums(prop))
+   high_value <- rep(99, dim(prop)[1])  # set a vector to hold the decision
+   # loop across the vector to find the most likely result, and return that name
+   for(i in 1:length(high_value)){
+     high_value[i] = colnames(prop)[which.max(prop[i, 1:4])]
+   }
+   errors <- rep(99, dim(prop)[1])  # set a vector to hold the total errors
+   for(k in 1:length(errors)){
+     errors[k] = prop[k,5] - prop[k,which.max(prop[k, 1:4])]
+   }
+   error_rate <- rep(99, dim(prop)[1])  # set a vector to hold the error rate
+   # loop across the vector, summing up the non-1R talleys, and dividing by total observations
+   for(j in 1:length(error_rate)){
+     error_rate[j] = round(1 - max(prop[j, 1:4])/prop[j,5], 3)
+   }
+   # combine the table, the decision, and the error rate
+   prop <- cbind(prop, decision_1R = high_value, errors, error_rate)
+   # set the first col to NA since we're ignoring no-risk situations
+   prop[,1] <- NA
+   #proptibble <- tibble(prop) %>% 
+    #  arrange(desc(high_risk_proportion))
+   
+   return(prop)
+}
+```
+
+#### Primary Condition Group 1R Decisions and Error Rates on rebinned risk groups
+
+```{r PrimaryConditionGroup rebin_1R}
+pcg_rebin1R <- rebin_1R(x = rebinRisk$PrimaryConditionGroup)
+pcg_rebin1R_tot <- sum(as.numeric(pcg_rebin1R[,5]))
+pcg_rebin1R_err <- sum(as.numeric(pcg_rebin1R[,7]))
+pcg_rebin1R_rate <- pcg_rebin1R_err/pcg_rebin1R_tot
+kable(pcg_rebin1R)
+```
+
+
+#### Charlson Index Group 1R Decisions and Error Rates on rebinned risk groups
+
+```{r CharlsonIndex rebin_1R}
+ci_rebin1R <- rebin_1R(x = rebinRisk$CharlsonIndex)
+ci_rebin1R_tot <- sum(as.numeric(ci_rebin1R[,5]))
+ci_rebin1R_err <- sum(as.numeric(ci_rebin1R[,7]))
+ci_rebin1R_rate <- ci_rebin1R_err/ci_rebin1R_tot
+kable(ci_rebin1R)
+```
+
+
+
+#### Length of Stay 1R Decisions and Error Rates on rebinned risk groups
+
+```{r LengthofStay rebin_1R}
+los_rebin1R <- rebin_1R(x = rebinRisk$LengthOfStay)
+los_rebin1R_tot <- sum(as.numeric(los_rebin1R[,5]))
+los_rebin1R_err <- sum(as.numeric(los_rebin1R[,7]))
+los_rebin1R_rate <- los_rebin1R_err/los_rebin1R_tot
+kable(los_rebin1R)
+```
+
+### Comparison of 1R rules on rebinned risk groups
+
+The rebinned Primary Condition Group 1R rule has `r pcg_rebin1R_err` errors on `r pcg_rebin1R_tot` observations, for an error rate of `r round(pcg_rebin1R_rate, 4)`.  
+The rebinned Charlson Index 1R rule has `r ci_rebin1R_err` errors on `r ci_rebin1R_tot` observations, for an error rate of `r round(ci_rebin1R_rate, 4)`.  
+The rebinned Length of Stay 1R rule has `r los_rebin1R_err` errors on `r los_rebin1R_tot` observations, for an error rate of `r round(los_rebin1R_rate, 4)`.  
+
+Each field now has a lower error rate of roughly 48%, which is better since now any 1R rule chosen is better (where as previously, the lowest error rate was 61%). With this set of bins on the risk level group, the Primary Condition Group had a fractionally better error rate of 47.85% error (compared to Charlson Index error rate of 47.88% and Length Of Stay error rate of 47.93%).
+
+# Appendix
+
+## Risk Group Counts
+**graphical inspection function**
+```{r ggplot risk_group function}
+risk_group_counts <- ggplot(VlookupSim, aes(x = Risk_Level_label)) +
+   geom_text(aes(label = ..count..), stat = "count", vjust = -0.25) +
+   geom_bar()
+
+rebin_risk_group_counts <- ggplot(rebinRisk, aes(x = Risk_Level_label)) +
+   geom_text(aes(label = ..count..), stat = "count", vjust = -0.25) +
+   geom_bar()
+```
+
+
+```{r Primary Condition Group plots, eval = F}
+risk_group_counts +
+  facet_wrap(~PrimaryConditionGroup)
+
+rebin_risk_group_counts  +
+  facet_wrap(~PrimaryConditionGroup)
+```
+
+
+```{r Charlson Index plot plots, eval = F}
+risk_group_counts +
+  facet_wrap(~CharlsonIndex)
+
+rebin_risk_group_counts +
+  facet_wrap(~CharlsonIndex)
+```
+
+
+```{r Length Of Stay plots, eval = F}
+risk_group_counts +
+  facet_wrap(~LengthOfStay)
+
+rebin_risk_group_counts +
+  facet_wrap(~LengthOfStay)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

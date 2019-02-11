@@ -1,11 +1,12 @@
 ---
+title: "Homework 3"
+author: "Andey Nunes, Mengyu Li, Jordan Hilton, Peter Boss"
+date: "2/2/2019"
+output: pdf_document
 html_document:
   df_print: paged
   toc: yes
   toc_depth: '3'
-author: "Andey Nunes, Mengyu Li, Jordan Hilton, Peter Boss"
-date: "2/2/2019"
-title: "Homework 3"
 ---
 
 #### Document and Exercise Set Up
@@ -23,7 +24,12 @@ options(digits = 2, scipen = 999)
 
 ```{r load data}
 Claims_and_Days <- read_csv("Claims_and_Days.csv",
-col_types = cols(CharlsonIndex = col_character()))
+col_types = cols(placesvc = col_factor(),
+                 dsfs = col_factor(),
+                 PrimaryConditionGroup = col_factor(),
+                 CharlsonIndex = col_character(),
+                 sex = col_factor(),
+                 Risk_Level = col_factor()))
 
 names(Claims_and_Days)
 ```
@@ -70,7 +76,7 @@ VlookupSim <- Claims_and_Days %>%
   mutate(Risk_Level_label = ordered(Risk_Level_label, levels = c(
     "no risk", "very low risk", "low risk", "medium risk", "high risk")))
 
-str(VlookupSim)
+summary(VlookupSim)
 ```
 
 
