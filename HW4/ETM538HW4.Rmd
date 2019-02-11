@@ -250,6 +250,205 @@ First, here are some example combinations that predict risk levels A, C, and D:
 
 Looking at the probability tables, what's happening is just that because that the counts for risk level B are lower than for other categories- presumably because the odds of spending exactly 2 days in the hospital are lower than the odds of spending either 1 day or between 3 and 5 days.
 
-### 6. Changed Risk buckets
+
+
+## 6: After combing risk level B & C, under the condition Charlson:3-4 Stay:4- 8 weeks PCG:SEPSIS prediction, the result of prediction of B increased from 2% to 8%.
+```{r dataload}
+
+mem_claims             <- read.csv("Claims_Y1.csv")
+mem_days               <- read.csv("DayInHospital_Y2.csv")
+mem_info               <- read.csv("Members_Y1.csv")
+risk_model             <- read.csv("risk_model_2.csv") # added for Question 6
+```
+
+
+```{r processing}
+colnames(mem_days) <- c("MemberID", "Days")
+mem_to_risk <- merge(mem_days, risk_model, by="Days")
+claims_to_risk <- merge(mem_claims, mem_to_risk, by = "MemberID")
+```
+
+
+```{r}
+n_claims <- length(claims_to_risk[,1])     # note that we have to pick a column.
+
+risks <- as.data.frame(as.character(claims_to_risk$RiskLevel))
+
+riskl <- as.list(risks)
+
+risk_count <- aggregate(risks, riskl, FUN=length)
+
+colnames(risk_count) <- c("RiskLevel", "RiskCount")
+
+a_priori <- risk_count
+
+a_priori$Total <- n_claims
+
+a_priori$Prob <- a_priori$RiskCount / n_claims
+
+colnames(a_priori) <- c("RiskLevel", "RiskCount","Total", "Prob") ##Modified this from original code
+
+write.csv(a_priori, file = "out_a_priori.csv", row.names = FALSE)
+```
+
+
+```{r charlsonindex}
+on_charlson <- data.frame(as.character(claims_to_risk$RiskLevel),
+                             as.character(claims_to_risk$CharlsonIndex))
+
+colnames(on_charlson) <- c("RiskLevel", "Charlson")
+
+df_char <- as.data.frame(as.character(on_charlson$Charlson))
+
+colnames(df_char) <- c("Charlson")
+
+l_char <- on_charlson$Charlson
+
+l_risk <- on_charlson$RiskLevel
+
+count_char <- aggregate(df_char, by=list(l_char, l_risk), FUN=length)
+
+colnames(count_char) <- c("Charlson", "RiskLevel", "Count")
+
+# check the total to make sure everything is present and accounted for.
+
+n_chars <- sum(count_char$Count)
+
+n_missing <- n_claims - n_chars
+
+print(paste("A Posteriori Charlson -- ", toString(n_missing), " are missing."))
+
+post_char <- merge(count_char, risk_count, by="RiskLevel")
+
+post_char$Prob <- post_char$Count / post_char$RiskCount
+
+post_char$Label <- paste(post_char$Charlson, post_char$RiskLevel, sep="|")
+
+# reorder the columns
+
+post_char <- post_char[c("Label", "Charlson", "RiskLevel", "Count", "RiskCount", "Prob")]
+```
+
+
+```{r length}
+# extract length of stay as a vector
+new_stay <- as.character(claims_to_risk$LengthOfStay)
+
+# assign default value to missing columns
+new_stay[new_stay == ''] <- '0 days'
+on_stay <- data.frame(as.character(claims_to_risk$RiskLevel),
+                          as.character(new_stay))
+colnames(on_stay) <- c("RiskLevel", "Stay")
+
+addon<-expand.grid(levels(on_stay$RiskLevel),levels(on_stay$Stay))
+colnames(addon) <- c("RiskLevel", "Stay")
+
+on_stay<-rbind(on_stay, addon)
+
+df_stay <- as.data.frame(as.character(on_stay$Stay))
+
+colnames(df_stay) <- c("Stay")
+
+l_stay <- on_stay$Stay
+
+l_risk <- on_stay$RiskLevel
+
+count_stay <- aggregate(df_stay, by=list(l_stay, l_risk), FUN=length)
+
+colnames(count_stay) <- c("Stay", "RiskLevel", "Count")
+
+# check the total to make sure everything is present and accounted for.
+
+n_stays <- sum(count_stay$Count)
+
+n_missing <- n_claims - n_stays
+
+print(paste("A Posteriori stay -- ", toString(n_missing), " are missing."))
+
+post_stay <- merge(count_stay, risk_count, by="RiskLevel")
+
+post_stay$Prob <- post_stay$Count / post_stay$RiskCount
+
+post_stay$Label <- paste(post_stay$Stay, post_stay$RiskLevel, sep="|")
+
+# reorder the columns
+
+post_stay <- post_stay[c("Label", "Stay", "RiskLevel", "Count", "RiskCount", "Prob")]
+```
+
+
+```{r primaryconditiongroup}
+
+on_pcg <- data.frame(as.character(claims_to_risk$RiskLevel),
+                      as.character(claims_to_risk$PrimaryConditionGroup))
+
+colnames(on_pcg) <- c("RiskLevel", "pcg")
+
+df_pcg <- as.data.frame(as.character(on_pcg$pcg))
+
+colnames(df_pcg) <- c("pcg")
+
+l_pcg <- on_pcg$pcg
+
+l_risk <- on_pcg$RiskLevel
+
+count_pcg <- aggregate(df_pcg, by=list(l_pcg, l_risk), FUN=length)
+
+colnames(count_pcg) <- c("pcg", "RiskLevel", "Count")
+
+# check the total to make sure everything is present and accounted for.
+
+n_pcgs <- sum(count_pcg$Count)
+
+n_missing <- n_claims - n_pcgs
+
+print(paste("A Posteriori pcg -- ", toString(n_missing), " are missing."))
+
+post_pcg <- merge(count_pcg, risk_count, by="RiskLevel")
+
+post_pcg$Prob <- post_pcg$Count / post_pcg$RiskCount
+
+post_pcg$Label <- paste(post_pcg$pcg, post_pcg$RiskLevel, sep="|")
+
+# reorder the columns
+
+post_pcg <- post_pcg[c("Label", "pcg", "RiskLevel", "Count", "RiskCount", "Prob")]
+```
+
+
+```{r}
+library(dplyr)
+val_char <- '3-4'
+val_stay<- '4- 8 weeks'
+val_pcg <- 'SEPSIS'
+
+prob_a <- a_priori %>% 
+  select(RiskLevel, prob.a = Prob)
+  
+prob_c<- post_char %>% 
+  filter(Charlson == val_char) %>% 
+  select(RiskLevel, prob.c = Prob)
+
+prob_s<- post_stay %>% 
+  filter(Stay == val_stay) %>% 
+  select(RiskLevel, prob.s =Prob)
+
+prob_p<- post_pcg %>% 
+  filter(pcg == val_pcg) %>% 
+  select(RiskLevel, prob.p = Prob)
+
+prob <- inner_join(prob_c, prob_s, by = 'RiskLevel') %>% 
+  inner_join(prob_p, by = 'RiskLevel') %>% 
+  inner_join(prob_a, by = 'RiskLevel') %>% 
+  mutate(prob = prob.c * prob.s * prob.p * prob.a * 100)
+
+prob$pred <- prob$prob/sum(prob$prob)
+prob
+```
+
+
+
+
+
 
 ### 7. Adding a variable
