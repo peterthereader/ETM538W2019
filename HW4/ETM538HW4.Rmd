@@ -264,9 +264,9 @@ Looking at the probability tables, what's happening is just that because that th
 #mem_info               <- read.csv("Members_Y1.csv")
 
 # to implement the balanced bucket option, comment out reading in the 
-# new csv risk model (line 267) and uncomment the last line in this 
+# new csv risk model (line 267) and uncomment the last 2 lines in this 
 # code chunk that reassigns the bucket count (line 272), to go back
-# reverse that... comment out the last line and uncomment out reading in
+# reverse that... comment out the last 2 lines and uncomment out reading in
 # "risk_model_2.csv", but make sure it is in the working directory
 
 # this risk model combines B & C buckets into a single bucket leaving
@@ -277,6 +277,7 @@ Looking at the probability tables, what's happening is just that because that th
 # use this a different interpretation of the model where the same 
 # number of buckets is retained, but buckets "B" and "C" are balanced
 risk_model[4,2] <- "B"
+write.csv(risk_model, "alt_risk_model.csv")
 ```
 
 
@@ -471,6 +472,11 @@ prob
 ```
 
 
+```{r Q6_write}
+write.csv(Q6_post_char, file = "Q6_out_charlson.csv")
+write.csv(Q6_post_stay, file = "Q6_out_stay.csv")
+write.csv(Q6_post_pcg, file = "Q6_out_pcg.csv")
+```
 
 
 
