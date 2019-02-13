@@ -1,7 +1,11 @@
 ---
 title: "ETM538 HW 4"
-author: "Jordan Hilton"
-date: "February 3, 2019"
+author:
+- Jordan Hilton
+- Mengyu Li  
+- Peter Boss
+- Andey Nunes, MS
+date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: pdf_document
 ---
 
@@ -26,7 +30,7 @@ Here's the processing code:
 
 ```{r processing}
 colnames(mem_days) <- c("MemberID", "Days")
-mem_to_risk <- merge(mem_days, risk_model, by="Days")
+mem_to_risk <- merge(mem_days, risk_model, by = "Days")
 claims_to_risk <- merge(mem_claims, mem_to_risk, by = "MemberID")
 ```
 
@@ -39,7 +43,7 @@ risks <- as.data.frame(as.character(claims_to_risk$RiskLevel))
 
 riskl <- as.list(risks)
 
-risk_count <- aggregate(risks, riskl, FUN=length)
+risk_count <- aggregate(risks, riskl, FUN = length)
 
 colnames(risk_count) <- c("RiskLevel", "RiskCount")
 
@@ -70,7 +74,7 @@ l_char <- on_charlson$Charlson
 
 l_risk <- on_charlson$RiskLevel
 
-count_char <- aggregate(df_char, by=list(l_char, l_risk), FUN=length)
+count_char <- aggregate(df_char, by = list(l_char, l_risk), FUN=length)
 
 colnames(count_char) <- c("Charlson", "RiskLevel", "Count")
 
@@ -82,11 +86,11 @@ n_missing <- n_claims - n_chars
 
 print(paste("A Posteriori Charlson -- ", toString(n_missing), " are missing."))
 
-post_char <- merge(count_char, risk_count, by="RiskLevel")
+post_char <- merge(count_char, risk_count, by = "RiskLevel")
 
 post_char$Prob <- post_char$Count / post_char$RiskCount
 
-post_char$Label <- paste(post_char$Charlson, post_char$RiskLevel, sep="|")
+post_char$Label <- paste(post_char$Charlson, post_char$RiskLevel, sep = "|")
 
 # reorder the columns
 
@@ -110,11 +114,11 @@ on_stay <- data.frame(as.character(claims_to_risk$RiskLevel),
 colnames(on_stay) <- c("RiskLevel", "Stay")
 
 ###for question 4, we're going to add in 1 count for every combination of stay and risk level. this first line creates a table in the same format as df_stay, with one row for every combination of length of stay and risk level
-addon<-expand.grid(levels(on_stay$RiskLevel),levels(on_stay$Stay))
+addon <- expand.grid(levels(on_stay$RiskLevel),levels(on_stay$Stay))
 colnames(addon) <- c("RiskLevel", "Stay")
 
 ##and this second line adds that to the bottom of df_stay
-on_stay<-rbind(on_stay, addon)
+on_stay <- rbind(on_stay, addon)
 
 df_stay <- as.data.frame(as.character(on_stay$Stay))
 
@@ -124,7 +128,7 @@ l_stay <- on_stay$Stay
 
 l_risk <- on_stay$RiskLevel
 
-count_stay <- aggregate(df_stay, by=list(l_stay, l_risk), FUN=length)
+count_stay <- aggregate(df_stay, by = list(l_stay, l_risk), FUN = length)
 
 colnames(count_stay) <- c("Stay", "RiskLevel", "Count")
 
@@ -136,11 +140,11 @@ n_missing <- n_claims - n_stays
 
 print(paste("A Posteriori stay -- ", toString(n_missing), " are missing."))
 
-post_stay <- merge(count_stay, risk_count, by="RiskLevel")
+post_stay <- merge(count_stay, risk_count, by = "RiskLevel")
 
 post_stay$Prob <- post_stay$Count / post_stay$RiskCount
 
-post_stay$Label <- paste(post_stay$Stay, post_stay$RiskLevel, sep="|")
+post_stay$Label <- paste(post_stay$Stay, post_stay$RiskLevel, sep = "|")
 
 # reorder the columns
 
@@ -164,7 +168,7 @@ l_pcg <- on_pcg$pcg
 
 l_risk <- on_pcg$RiskLevel
 
-count_pcg <- aggregate(df_pcg, by=list(l_pcg, l_risk), FUN=length)
+count_pcg <- aggregate(df_pcg, by = list(l_pcg, l_risk), FUN = length)
 
 colnames(count_pcg) <- c("pcg", "RiskLevel", "Count")
 
@@ -176,11 +180,11 @@ n_missing <- n_claims - n_pcgs
 
 print(paste("A Posteriori pcg -- ", toString(n_missing), " are missing."))
 
-post_pcg <- merge(count_pcg, risk_count, by="RiskLevel")
+post_pcg <- merge(count_pcg, risk_count, by = "RiskLevel")
 
 post_pcg$Prob <- post_pcg$Count / post_pcg$RiskCount
 
-post_pcg$Label <- paste(post_pcg$pcg, post_pcg$RiskLevel, sep="|")
+post_pcg$Label <- paste(post_pcg$pcg, post_pcg$RiskLevel, sep = "|")
 
 # reorder the columns
 
@@ -190,9 +194,9 @@ post_pcg <- post_pcg[c("Label", "pcg", "RiskLevel", "Count", "RiskCount", "Prob"
 Writing out to csvs:
 
 ```{r write}
-write.csv(post_char, file="out_charlson.csv")
-write.csv(post_stay, file="out_stay.csv")
-write.csv(post_pcg, file="out_pcg.csv")
+write.csv(post_char, file = "out_charlson.csv")
+write.csv(post_stay, file = "out_stay.csv")
+write.csv(post_pcg, file = "out_pcg.csv")
 ```
 
 
@@ -219,8 +223,8 @@ Charlson index seems to be the most influential variable- when you hold other va
 
 The label column is produced in the R code by this line, which pastes together the risk level and the independent variable we're looking at:
 
-```{r labelexample}
-post_pcg$Label <- paste(post_pcg$pcg, post_pcg$RiskLevel, sep="|")
+```{r labelexample, echo = TRUE, eval = FALSE}
+post_pcg$Label <- paste(post_pcg$pcg, post_pcg$RiskLevel, sep = "|")
 ```
 
 It's used by the Excel sheet as the key for the vlookup function to reference the chosen combination of independent variable and risk level for the naive Bayes calculation.
@@ -231,11 +235,11 @@ This happens because there are 0 occurences in the data of some combinations of 
 
 ```{r fixmissingstays}
 ###for question 4, we're going to add in 1 count for every combination of stay and risk level. this first line creates a table in the same format as df_stay, with one row for every combination of length of stay and risk level
-addon<-expand.grid(levels(on_stay$RiskLevel),levels(on_stay$Stay))
+addon <- expand.grid(levels(on_stay$RiskLevel),levels(on_stay$Stay))
 colnames(addon) <- c("RiskLevel", "Stay")
 
 ##and this second line adds that to the bottom of df_stay
-on_stay<-rbind(on_stay, addon)
+on_stay <- rbind(on_stay, addon)
 ```
 
 As a minor note, we also had to adjust the formula in the excel model to include the additional rows this generated
@@ -244,7 +248,7 @@ As a minor note, we also had to adjust the formula in the excel model to include
 
 First, here are some example combinations that predict risk levels A, C, and D:
 
-* A
+* A 
 * C 
 * D Charlson:3-4	Stay:4- 8 weeks	PCG:SEPSIS predicts for D at 67.2%
 
@@ -253,187 +257,207 @@ Looking at the probability tables, what's happening is just that because that th
 
 
 ## 6: After combing risk level B & C, under the condition Charlson:3-4 Stay:4- 8 weeks PCG:SEPSIS prediction, the result of prediction of B increased from 2% to 8%.
-```{r dataload}
+```{r Q6dataload}
+# these first 3 are already loaded and do not change, no need to recall them
+#mem_claims             <- read.csv("Claims_Y1.csv")
+#mem_days               <- read.csv("DayInHospital_Y2.csv")
+#mem_info               <- read.csv("Members_Y1.csv")
 
-mem_claims             <- read.csv("Claims_Y1.csv")
-mem_days               <- read.csv("DayInHospital_Y2.csv")
-mem_info               <- read.csv("Members_Y1.csv")
-risk_model             <- read.csv("risk_model_2.csv") # added for Question 6
+# to implement the balanced bucket option, comment out reading in the 
+# new csv risk model (line 267) and uncomment the last line in this 
+# code chunk that reassigns the bucket count (line 272), to go back
+# reverse that... comment out the last line and uncomment out reading in
+# "risk_model_2.csv", but make sure it is in the working directory
+
+# this risk model combines B & C buckets into a single bucket leaving
+# 4 buckets instead of 5
+# risk_model             <- read.csv("risk_model_2.csv") # added for Question 6
+
+
+# use this a different interpretation of the model where the same 
+# number of buckets is retained, but buckets "B" and "C" are balanced
+risk_model[4,2] <- "B"
 ```
 
 
-```{r processing}
-colnames(mem_days) <- c("MemberID", "Days")
-mem_to_risk <- merge(mem_days, risk_model, by="Days")
-claims_to_risk <- merge(mem_claims, mem_to_risk, by = "MemberID")
+```{r Q6processing}
+#colnames(mem_days) <- c("MemberID", "Days")
+Q6_mem_to_risk <- merge(mem_days, risk_model, by = "Days")
+Q6_claims_to_risk <- merge(mem_claims, mem_to_risk, by = "MemberID")
 ```
 
 
-```{r}
-n_claims <- length(claims_to_risk[,1])     # note that we have to pick a column.
+```{r Q6 a priori}
+# again nothing changes in this code chunk
 
-risks <- as.data.frame(as.character(claims_to_risk$RiskLevel))
+Q6_n_claims <- length(Q6_claims_to_risk[,1])     # note that we have to pick a column.
 
-riskl <- as.list(risks)
+Q6_risks <- as.data.frame(as.character(Q6_claims_to_risk$RiskLevel))
 
-risk_count <- aggregate(risks, riskl, FUN=length)
+Q6_riskl <- as.list(Q6_risks)
 
-colnames(risk_count) <- c("RiskLevel", "RiskCount")
+Q6_risk_count <- aggregate(Q6_risks, Q6_riskl, FUN = length)
 
-a_priori <- risk_count
+colnames(Q6_risk_count) <- c("RiskLevel", "RiskCount")
 
-a_priori$Total <- n_claims
+Q6_a_priori <- Q6_risk_count
 
-a_priori$Prob <- a_priori$RiskCount / n_claims
+Q6_a_priori$Total <- Q6_n_claims
 
-colnames(a_priori) <- c("RiskLevel", "RiskCount","Total", "Prob") ##Modified this from original code
+Q6_a_priori$Prob <- Q6_a_priori$RiskCount / Q6_n_claims
 
-write.csv(a_priori, file = "out_a_priori.csv", row.names = FALSE)
+colnames(Q6_a_priori) <- c("RiskLevel", "RiskCount","Total", "Prob") ##Modified this from original code
+
+write.csv(Q6_a_priori, file = "out_Q6_a_priori.csv", row.names = FALSE)
 ```
 
 
-```{r charlsonindex}
-on_charlson <- data.frame(as.character(claims_to_risk$RiskLevel),
-                             as.character(claims_to_risk$CharlsonIndex))
+```{r Q6_charlsonindex}
+# now things are different because the
 
-colnames(on_charlson) <- c("RiskLevel", "Charlson")
+Q6_on_charlson <- data.frame(
+  as.character(Q6_claims_to_risk$RiskLevel),
+  as.character(Q6_claims_to_risk$CharlsonIndex))
 
-df_char <- as.data.frame(as.character(on_charlson$Charlson))
+colnames(Q6_on_charlson) <- c("RiskLevel", "Charlson")
 
-colnames(df_char) <- c("Charlson")
+Q6_df_char <- as.data.frame(as.character(Q6_on_charlson$Charlson))
 
-l_char <- on_charlson$Charlson
+colnames(Q6_df_char) <- c("Charlson")
 
-l_risk <- on_charlson$RiskLevel
+Q6_l_char <- Q6_on_charlson$Charlson
 
-count_char <- aggregate(df_char, by=list(l_char, l_risk), FUN=length)
+Q6_l_risk <- Q6_on_charlson$RiskLevel
 
-colnames(count_char) <- c("Charlson", "RiskLevel", "Count")
+Q6_count_char <- aggregate(Q6_df_char, by = list(Q6_l_char, Q6_l_risk), FUN = length)
+
+colnames(Q6_count_char) <- c("Charlson", "RiskLevel", "Count")
 
 # check the total to make sure everything is present and accounted for.
 
-n_chars <- sum(count_char$Count)
+Q6_n_chars <- sum(Q6_count_char$Count)
 
-n_missing <- n_claims - n_chars
+Q6_n_missing <- Q6_n_claims - Q6_n_chars
 
-print(paste("A Posteriori Charlson -- ", toString(n_missing), " are missing."))
+print(paste("A Posteriori Charlson -- ", toString(Q6_n_missing), " are missing."))
 
-post_char <- merge(count_char, risk_count, by="RiskLevel")
+Q6_post_char <- merge(Q6_count_char, Q6_risk_count, by = "RiskLevel")
 
-post_char$Prob <- post_char$Count / post_char$RiskCount
+Q6_post_char$Prob <- Q6_post_char$Count / Q6_post_char$RiskCount
 
-post_char$Label <- paste(post_char$Charlson, post_char$RiskLevel, sep="|")
+Q6_post_char$Label <- paste(Q6_post_char$Charlson, Q6_post_char$RiskLevel, sep = "|")
 
 # reorder the columns
 
-post_char <- post_char[c("Label", "Charlson", "RiskLevel", "Count", "RiskCount", "Prob")]
+Q6_post_char <- Q6_post_char[c("Label", "Charlson", "RiskLevel", "Count", "RiskCount", "Prob")]
 ```
 
 
-```{r length}
+```{r Q6_length of stay}
 # extract length of stay as a vector
-new_stay <- as.character(claims_to_risk$LengthOfStay)
+Q6_new_stay <- as.character(Q6_claims_to_risk$LengthOfStay)
 
 # assign default value to missing columns
-new_stay[new_stay == ''] <- '0 days'
-on_stay <- data.frame(as.character(claims_to_risk$RiskLevel),
-                          as.character(new_stay))
-colnames(on_stay) <- c("RiskLevel", "Stay")
+Q6_new_stay[Q6_new_stay == ''] <- '0 days'
+Q6_on_stay <- data.frame(as.character(Q6_claims_to_risk$RiskLevel),
+                          as.character(Q6_new_stay))
+colnames(Q6_on_stay) <- c("RiskLevel", "Stay")
 
-addon<-expand.grid(levels(on_stay$RiskLevel),levels(on_stay$Stay))
-colnames(addon) <- c("RiskLevel", "Stay")
+Q6_addon <- expand.grid(levels(Q6_on_stay$RiskLevel),levels(Q6_on_stay$Stay))
+colnames(Q6_addon) <- c("RiskLevel", "Stay")
 
-on_stay<-rbind(on_stay, addon)
+Q6_on_stay <- rbind(Q6_on_stay, Q6_addon)
 
-df_stay <- as.data.frame(as.character(on_stay$Stay))
+Q6_df_stay <- as.data.frame(as.character(Q6_on_stay$Stay))
 
-colnames(df_stay) <- c("Stay")
+colnames(Q6_df_stay) <- c("Stay")
 
-l_stay <- on_stay$Stay
+Q6_l_stay <- Q6_on_stay$Stay
 
-l_risk <- on_stay$RiskLevel
+Q6_l_risk <- Q6_on_stay$RiskLevel
 
-count_stay <- aggregate(df_stay, by=list(l_stay, l_risk), FUN=length)
+Q6_count_stay <- aggregate(Q6_df_stay, by = list(Q6_l_stay, Q6_l_risk), FUN = length)
 
-colnames(count_stay) <- c("Stay", "RiskLevel", "Count")
-
-# check the total to make sure everything is present and accounted for.
-
-n_stays <- sum(count_stay$Count)
-
-n_missing <- n_claims - n_stays
-
-print(paste("A Posteriori stay -- ", toString(n_missing), " are missing."))
-
-post_stay <- merge(count_stay, risk_count, by="RiskLevel")
-
-post_stay$Prob <- post_stay$Count / post_stay$RiskCount
-
-post_stay$Label <- paste(post_stay$Stay, post_stay$RiskLevel, sep="|")
-
-# reorder the columns
-
-post_stay <- post_stay[c("Label", "Stay", "RiskLevel", "Count", "RiskCount", "Prob")]
-```
-
-
-```{r primaryconditiongroup}
-
-on_pcg <- data.frame(as.character(claims_to_risk$RiskLevel),
-                      as.character(claims_to_risk$PrimaryConditionGroup))
-
-colnames(on_pcg) <- c("RiskLevel", "pcg")
-
-df_pcg <- as.data.frame(as.character(on_pcg$pcg))
-
-colnames(df_pcg) <- c("pcg")
-
-l_pcg <- on_pcg$pcg
-
-l_risk <- on_pcg$RiskLevel
-
-count_pcg <- aggregate(df_pcg, by=list(l_pcg, l_risk), FUN=length)
-
-colnames(count_pcg) <- c("pcg", "RiskLevel", "Count")
+colnames(Q6_count_stay) <- c("Stay", "RiskLevel", "Count")
 
 # check the total to make sure everything is present and accounted for.
 
-n_pcgs <- sum(count_pcg$Count)
+Q6_n_stays <- sum(Q6_count_stay$Count)
 
-n_missing <- n_claims - n_pcgs
+Q6_n_missing <- Q6_n_claims - Q6_n_stays
 
-print(paste("A Posteriori pcg -- ", toString(n_missing), " are missing."))
+print(paste("A Posteriori stay -- ", toString(Q6_n_missing), " are missing."))
 
-post_pcg <- merge(count_pcg, risk_count, by="RiskLevel")
+Q6_post_stay <- merge(Q6_count_stay, Q6_risk_count, by = "RiskLevel")
 
-post_pcg$Prob <- post_pcg$Count / post_pcg$RiskCount
+Q6_post_stay$Prob <- Q6_post_stay$Count / Q6_post_stay$RiskCount
 
-post_pcg$Label <- paste(post_pcg$pcg, post_pcg$RiskLevel, sep="|")
+Q6_post_stay$Label <- paste(Q6_post_stay$Stay, Q6_post_stay$RiskLevel, sep = "|")
 
 # reorder the columns
 
-post_pcg <- post_pcg[c("Label", "pcg", "RiskLevel", "Count", "RiskCount", "Prob")]
+Q6_post_stay <- Q6_post_stay[c("Label", "Stay", "RiskLevel", "Count", "RiskCount", "Prob")]
 ```
 
 
-```{r}
+```{r Q6_primaryconditiongroup}
+
+Q6_on_pcg <- data.frame(
+  as.character(Q6_claims_to_risk$RiskLevel),
+  as.character(Q6_claims_to_risk$PrimaryConditionGroup))
+
+colnames(Q6_on_pcg) <- c("RiskLevel", "pcg")
+
+Q6_df_pcg <- as.data.frame(as.character(Q6_on_pcg$pcg))
+
+colnames(Q6_df_pcg) <- c("pcg")
+
+Q6_l_pcg <- Q6_on_pcg$pcg
+
+Q6_l_risk <- Q6_on_pcg$RiskLevel
+
+Q6_count_pcg <- aggregate(Q6_df_pcg, by = list(Q6_l_pcg, Q6_l_risk), FUN = length)
+
+colnames(Q6_count_pcg) <- c("pcg", "RiskLevel", "Count")
+
+# check the total to make sure everything is present and accounted for.
+
+Q6_n_pcgs <- sum(Q6_count_pcg$Count)
+
+Q6_n_missing <- Q6_n_claims - Q6_n_pcgs
+
+print(paste("A Posteriori pcg -- ", toString(Q6_n_missing), " are missing."))
+
+Q6_post_pcg <- merge(Q6_count_pcg, Q6_risk_count, by = "RiskLevel")
+
+Q6_post_pcg$Prob <- Q6_post_pcg$Count / Q6_post_pcg$RiskCount
+
+Q6_post_pcg$Label <- paste(Q6_post_pcg$pcg, Q6_post_pcg$RiskLevel, sep = "|")
+
+# reorder the columns
+
+Q6_post_pcg <- Q6_post_pcg[c("Label", "pcg", "RiskLevel", "Count", "RiskCount", "Prob")]
+```
+
+
+```{r Q6 example}
 library(dplyr)
 val_char <- '3-4'
-val_stay<- '4- 8 weeks'
+val_stay <- '4- 8 weeks'
 val_pcg <- 'SEPSIS'
 
-prob_a <- a_priori %>% 
+prob_a <- Q6_a_priori %>% 
   select(RiskLevel, prob.a = Prob)
   
-prob_c<- post_char %>% 
+prob_c <- Q6_post_char %>% 
   filter(Charlson == val_char) %>% 
   select(RiskLevel, prob.c = Prob)
 
-prob_s<- post_stay %>% 
+prob_s <- Q6_post_stay %>% 
   filter(Stay == val_stay) %>% 
-  select(RiskLevel, prob.s =Prob)
+  select(RiskLevel, prob.s = Prob)
 
-prob_p<- post_pcg %>% 
+prob_p <- Q6_post_pcg %>% 
   filter(pcg == val_pcg) %>% 
   select(RiskLevel, prob.p = Prob)
 
@@ -452,3 +476,49 @@ prob
 
 
 ### 7. Adding a variable
+
+To add another variable to the original risk model problem, we can recycle the original 3 csv files generated in the first part of the homework, and create a new csv for the new variable. Then we will add this as another sheet in the Excel tool and modify the front sheet to calculate the probability and likelihood based on the four variables.
+
+Here is an additional file generated on the `dsfs` days since first stay variable.
+
+```{r dsfs}
+on_dsfs <- data.frame(as.character(claims_to_risk$RiskLevel),
+                             as.character(claims_to_risk$dsfs))
+
+colnames(on_dsfs) <- c("RiskLevel", "dsfs")
+
+df_dsfs <- as.data.frame(as.character(on_dsfs$dsfs))
+
+colnames(df_dsfs) <- c("dsfs")
+
+l_dsfs <- on_dsfs$dsfs
+
+l_risk <- on_dsfs$RiskLevel
+
+count_dsfs <- aggregate(df_dsfs, by = list(l_dsfs, l_risk), FUN = length)
+
+colnames(count_dsfs) <- c("dsfs", "RiskLevel", "Count")
+
+# check the total to make sure everything is present and accounted for.
+
+n_dsfs <- sum(count_dsfs$Count)
+
+n_missing <- n_claims - n_dsfs
+
+print(paste("A Posteriori dsfs -- ", toString(n_missing), " are missing."))
+
+post_dsfs <- merge(count_dsfs, risk_count, by = "RiskLevel")
+
+post_dsfs$Prob <- post_dsfs$Count / post_dsfs$RiskCount
+
+post_dsfs$Label <- paste(post_dsfs$dsfs, post_char$RiskLevel, sep = "|")
+
+# reorder the columns
+
+post_dsfs <- post_dsfs[c("Label", "dsfs", "RiskLevel", "Count", "RiskCount", "Prob")]
+```
+
+
+```{r write dsfs}
+write.csv(post_dsfs, file = "out_dsfs.csv")
+```
