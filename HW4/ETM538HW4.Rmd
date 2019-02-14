@@ -246,17 +246,20 @@ As a minor note, we also had to adjust the formula in the excel model to include
 
 ### 5. Unlikely B
 
-First, here are some example combinations that predict risk levels A, C, and D:
+First, here are some example combinations that predict high risk levels for A, C, and D. We couldn't find any combinations where A or C had the highest probability, for reasons similar to B, but here are some with high probabilities for A and C.
 
-* A 
-* C 
+* A Charlson:5+ Stay:4-8 weeks PCG: COPD predicts for A at 9.9%
+* C Charlson: 3-4	Stay:12-26 weeks	PCG: GIOBSENT predicts for C at 14.8%
 * D Charlson:3-4	Stay:4- 8 weeks	PCG:SEPSIS predicts for D at 67.2%
 
 Looking at the probability tables, what's happening is just that because that the counts for risk level B are lower than for other categories- presumably because the odds of spending exactly 2 days in the hospital are lower than the odds of spending either 1 day or between 3 and 5 days.
 
 
 
-## 6: After combing risk level B & C, under the condition Charlson:3-4 Stay:4- 8 weeks PCG:SEPSIS prediction, the result of prediction of B increased from 2% to 8%.
+## 6 Changing Risk Buckets
+
+After combing risk level B & C, under the condition Charlson:3-4 Stay:4- 8 weeks PCG:SEPSIS prediction, the result of prediction of B increased from 2% to 8%. We're including a modifed excel model showing the changed risk buckets.
+
 ```{r Q6dataload}
 # these first 3 are already loaded and do not change, no need to recall them
 #mem_claims             <- read.csv("Claims_Y1.csv")
@@ -485,7 +488,9 @@ write.csv(Q6_post_pcg, file = "Q6_out_pcg.csv")
 
 To add another variable to the original risk model problem, we can recycle the original 3 csv files generated in the first part of the homework, and create a new csv for the new variable. Then we will add this as another sheet in the Excel tool and modify the front sheet to calculate the probability and likelihood based on the four variables.
 
-Here is an additional file generated on the `dsfs` days since first stay variable.
+Here is an additional file generated on the `dsfs` days since first stay variable. We picked `dsfs` since it shouldn't correlate too strongly with any of our 3 current variables, and the values looked nice.
+
+We're including in the submission the excel model for this added variable, and another excel model for adding the variable "specialty".
 
 ```{r dsfs}
 on_dsfs <- data.frame(as.character(claims_to_risk$RiskLevel),
