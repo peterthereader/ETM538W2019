@@ -1,0 +1,143 @@
+---
+title: "ETM538HW5"
+author: "Jordan Hilton"
+date: "February 18, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(pander)
+```
+
+## Instance-Based Learning Part A
+
+### Question 1
+
+Outlook can be sunny, overcast, or rainy (3); temp can be hot, mild or cool (3); humidity can be high or normal (2), and windy can be false or true (2); so there are $3*3*2*2=36$ total possible cases that can be considered.
+
+### Question 2
+
+To do this, let me load in our data, assign variable weights, and create a little distance-calculation function. We're also going to generate a list of all possible observations.
+
+```{r load}
+instancedata<- read_excel("Instance Based Classification v2.xlsx") ## load the spreadsheet
+instancedata<- data.frame(instancedata[-c(15:16),-c(6:11)]) ##drop the calculated distance columns and also the last two rows
+instances<-instancedata[-5] ##create a table without the outcome for measuring distances
+head(instancedata)
+```
+
+Here we're just assigning values to the weight for each variable:
+
+```{r assignweights}
+weights<-c(1,1,1,1) ## make a vector of variable weights
+names(weights)<-c("outlook", "temp", "humid", "windy")  ##name them so we don't forget
+weights
+```
+
+Here we're creating a function to calculate the Manhattan distance between two observations:
+
+```{r calculatedistance}
+distance<-function(x,y){
+  matching<-x==y # returns a list of booleans if each element matches
+  result<-4-as.numeric(matching) %*% weights #converts our list of matches to numeric instead of boolean, and then multiplies by variable weights, then we subtract from 4 to find the number of not-matching variables
+  return(result[1,1]) #the result is a matrix so we just grab the value out of it
+}
+```
+
+And here we're generating a table of all possible observations and noting that the table has 36 rows:
+
+```{r possibleclasses}
+possibleclasses <- expand.grid(levels(as.factor(instances$Outlook)),levels(as.factor(instances$Temp)),levels(as.factor(instances$Humid)),levels(as.factor(instances$Windy)))
+colnames(possibleclasses)<-c("Outlook", "Temp", "Humid", "Windy") #this fanciness just generates a list of all combinations of possible observations
+head(possibleclasses)
+length(possibleclasses[,1])
+```
+
+Now as an example, let's look at the distance between the first row of the possible classes table and the instances table:
+
+```{r example1}
+possibleclasses[1,]
+instances[1,]
+distance(possibleclasses[1,], instances[1,])
+```
+
+We can see that the Manhattan distance is 2, since the rows differ for 2 variables. 
+
+Let's get around to finally answering the question. I'm interpreting a "unique" answer to mean a possible observation has exactly 1 row of the data for which its Manhattan distance is minimum, and an "unambiguous" answer to be one for which all of the rows of the data which are at minimum distance have the same value for the outcome, "play". Let's start by generating a table where we calculate all the distances
+
+```{r distancestable}
+distancesbyrow<-data.frame() #36 rows iterated by i for possibles, 14 columns iterated by j for instances
+
+for(i in 1:36){
+  for(j in 1:14){
+    distancesbyrow[i,j]=distance(possibleclasses[i,],instances[j,])  # calculate the distance between every  possible row and data row, store the results
+  }
+}
+
+head(distancesbyrow)
+```
+
+Now let's create a table that stores the minimum distance for each possible observation, counts the number of occurrences for that minimum distance, and finally determines whether or not all of those instances of the minimum distance have matching values for "play":
+
+```{r resultstable}
+distanceresults<-data.frame() #36 rows, one for each possible class. first column is minimum distances, second column is occurences of the minimum distance
+
+for(i in 1:36){ #traversing across the 36 possible cases
+  distanceresults[i,1]<-min(distancesbyrow[i,]) #the minimum distance for each row of distancesbyrow
+  distanceresults[i,2]<-sum(distanceresults[i,1]==distancesbyrow[i,]) #the number of occurences of this minimum value
+  distanceresults[i,3]<-instancedata[which.min(distancesbyrow[i,]),5] ## pulls the "play" value for the first index which has the minimum value
+  for(j in 1:14){ ## traversing across the 14 distances for one possible case
+    if(distancesbyrow[i,j]==distanceresults[i,1] & instancedata[j,5]!=distanceresults[i,3]){
+      distanceresults[i,3]<-"amb"
+    } ## if the distance for this case is minimum AND the playvalue is not equal to the first playvalue stored, rewrite the playvalue to be ambiguous
+  }
+}
+
+colnames(distanceresults)<-c("minimumdistance","occurrences", "playvalue")
+head(distanceresults)
+sum(distanceresults$occurrences==1) # the number of possible classes that have a unique closest neighbor in the data
+sum(distanceresults$playvalue!="amb") # the number of unambiguous results
+```
+
+So to finally answer the question, there are 17 possible cases with a unique closest neighbor in the data set, and 26 with an unambiguous result in the playvalues of its closest neighbors.
+
+
+### Question 3
+
+Well, the maximum number of answers for "playvalue" is 2, since playvalue can be either "yes" or "no", and all of 10 of the ambiguous cases identified above will have both "yes" and "no" for playvalue in their nearest neighbors. Let me instead hand you the possible case with the highest number of nearest neighbors and show you that it's ambiguous:
+
+```{r highestoccurrences}
+which.max(distanceresults$occurrences) #which possible case has the highest number of nearest neighbors?
+possibleclasses[27,] #let's look at what the case looks like
+distanceresults$minimumdistance[27] #what is the minimum distance?
+distanceresults$occurrences[27] #how many nearest neighbors does it have?
+instancedata[c(2,8,11,12,14),] #here are the five rows that are distance 1 from this possible case, with ambiguous playvalues
+```
+
+
+
+### Question 4
+
+The distances in the spreadsheet are Manhattan distances - they're the linear sum of the weighted distances of the case in question against the dataset. The Euclidean distance would be the sum of the squares of the weighted distances. These happen to be equivalent when the weight is 1.
+
+### Question 5
+
+The weights change the importance of each variable in our distance calculation; a higher weight will cause a non-matching variable to have a higher "distance" between the observation and the data.
+
+### Question 6
+
+We did this by just rerunning our code from part 3, changing the weights to see what we could get for the highest number of unambiguous possible classes. We did find a set of weights that made all possible classes give an unambiguous result. Our initial instinct was to assign higher weights to the variables with a smaller number of possible values, but that turned out to be the wrong way to go. Here's a table of the results:
+
+```{r weightplaying}
+result1<-c(1,1,2,2,30)
+result2<-c(1,1,2,4,30)
+result3<-c(2,2,1,1,31)
+result4<-c(4,3,1,1,33)
+result5<-c(6,4,2,1,36)
+
+resultstable<-rbind(result1, result2, result3, result4, result5)
+colnames(resultstable)<-c("Outlookweight", "Tempweight", "Humidweight", "Windyweight", "Unambiguous")
+pander(resultstable)
+```
