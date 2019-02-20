@@ -49,9 +49,9 @@ pander(cbind(x,t))
 ```{r perceptron, include=FALSE, eval=FALSE}
 
 # nodes
-nodes <- DiagrammeR::create_nodes(
-  nodes = c("+1", "x1", "x2", "y"),
-  label = TRUE,
+nodes <- create_nodes_df(
+  n = 4,
+  label = c("+1", "x1", "x2", "y"),
   shape = rep("circle", 4))
 
 # edges
