@@ -1,0 +1,142 @@
+---
+title: "HW5 NN Notebook"
+author:
+- Jordan Hilton
+- Mengyu Li  
+- Peter Boss
+- Andey Nunes, MS
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_notebook
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+packages <- c("DiagrammeR", "knitr", "pander", "tidyverse")
+
+lapply(packages, require, character.only = T)
+
+options(digits = 2, scipen = 999)
+```
+
+# This assignment makes use of the following packages AND dependencies: 
+
++ `DiagrammeR`
++ 
++ `hclust`
++ `knitr`
++ 
++ `pander`
++ `tidyverse`
+
+Prior to rendering this document please update R, RStudio, and the associated packages to ensure optimal experience.
+
+# 5-1 – Neural Networks
+
+```{r}
+grViz("
+digraph class_example {
+
+   # a 'graph' statement
+   graph [overlap = true, fontsize = 10]
+
+   node [shape = circle,
+        fixedsize = true,
+        width = 0.9] // sets as circles
+   o_1; o_2; h_0_1; h_1; h_2; x_0_1; x_1; x_2
+
+   # several 'edge' statements
+   o_1->h_0_1 [arrowhead = none]
+   o_1->h_1 [arrowhead = none]
+   o_1->h_2 [arrowhead = none]
+   o_2->h_0_1 [arrowhead = none]
+   o_2->h_1 [arrowhead = none]
+   o_2->h_2 [arrowhead = none]
+   h_1->x_0_1 [arrowhead = none]
+   h_1->x_1 [arrowhead = none]
+   h_1->x_2 [arrowhead = none]
+   h_2->x_0_1 [arrowhead = none]
+   h_2->x_1 [arrowhead = none]
+   h_2->x_2 [arrowhead = none]
+   
+
+}
+")
+
+```
+
+
+
+This assignment is simply to do the next epoch of the in-class exercise.
+
+*load the inclass exericise info*
+
+what are the activations of the hidden and output units after forward-propagation of the input x2 = (0, 1)?
+
+
+
+
+Suppose x2 has target output t = (.1, .9). What are the weights after back-propagation on this example? Again, use learning rate η = 0.1 and momentum α = 0.9.
+
+*add and name code chunks here*
+
+For both the initial input (1, 0) and the 2nd input (0,1), calculate the outputs using both the initial weights, the weights after 1 epoch, and the final weights after 2 epochs. Comment on the results compared to the targets.
+
+
+
+
+
+> Please provide all the answers in the template “ETM 538 Template Winter 2019 Assignment 5 Neural Network”. Provide also the excel table or R code or… that allowed you to fill the template.
+
+
+In R there is a way to do a parameterized report template using an R Notebook. The way to do is is to use the notebook R code to generate a set of Parameters that are then passed in the YAML header to a separate .Rmd template file, which then renders the document using the parameters.
+
+
+
+# 5-2 – Instance Based Learning
+
+## Part A
+
+
+#### Review the Instance Based Classification v2 table. This is a slightly improved version of the table we looked at in class. F1 to I1 represent the weights of each attribute. (Here, they all have equal weight). Answer the following questions:
+
+
+#### What is the total number of possible weather cases that can be submitted for consideration?
+
+
+#### Of these, how many get a unique answer under the current set of weights? How many get an unambiguous answer?
+
+
+#### Of the cases that do not get an unambiguous, unique answer, what is the maximum number of answers proposed? How many cases give the maximum?
+
+
+#### Do the distance calculations in this table represent Euclidean distance, Manhattan distance, both or neither? Explain.
+
+
+#### What is the function of the weights in cells F1, G1, H1, and I1? What happens if we vary these weights?
+
+
+#### Can you assign a set of weights in cells F1, G1, H1, and I1 such that you get a unique answer for every one of the possible weather cases? If so, what are the weights? If not, explain how close you can come.
+
+
+
+## Part B
+
+
+#### Review the Instance Based Classification v2 table. This is a slightly improved version of the table we looked at in class.
+
+
+#### Build two new tables based on the example. One should use Euclidean distance. The other should use Manhattan distance. Keep the weights in cells F1, G1, H1, and I1 – these simply weight the individual attributes. The distance calculations themselves are embedded in the formulas in the region between J2 and J15.
+
+
+#### For each of the new tables, re-define the distance calculation for the “Outlook” variable to exploit the fact that rainy, overcast, and sunny can be rank ordered. Assign values of 1, 2, and 3 to these values respectively, and calculate the distance by taking the difference. Note that the minimum distance remains zero, while the maximum distance is now 2.
+
+
+#### For each of the new tables, change the “Temperature” attribute so that it is an integer between 32 and 100 (representing degrees Fahrenheit). For the training data, use the following values:
+
++ cool = 50
++ mild = 65
++ hot = 80
+
+
+#### Scale the distance calculation for Temperature so that it does not swamp the other attributes. Given that our “Outlook” variable will have values between 0 and 2, Temperature should have values between 0 and 2 as well. You can accomplish this in any way that seems reasonable for you, such as using a ratio based on maximum or minimum values, or a cap on the maximum.
