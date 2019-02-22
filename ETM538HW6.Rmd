@@ -1,0 +1,150 @@
+---
+title: "ETM538HW5"
+author: "Andey Nunes, Jordan Hilton, Mengyu Li, Peter Boss"
+date: "February 27, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+```
+
+
+## 1. List 10 questions you want to be able to answer using the Hospitals Data Warehouse (10%).  
+
+* Which departments generate the most revenue?  
+* Which departments generate the most revenue per patient?  
+* Which procedures generate the most revenue?  
+* Which procedures generate the most revenue per patient?  
+* Which procedures generate the most revenue per hour?  
+    + Which procedures can be scaled up to generate more revenue?  
+* What equipment is required for these procedures?  
+* What disposables are required for these procedures?  
+* What are the biggest expenses?  How can they be minimized?  
+* What are the drivers of length of hospital stay?  E.g. doctor, patient, health record attributes, department, procedure, etc.?  
+* Which patients have the most complications?  
+* Which doctors see patients with the highest rates of complications?  
+* Which complications are covered by insurance (i.e. someone else pays) versus ones the hospital is responsible for (i.e. the hospital loses money)?  
+* Which services are the most popular?  
+* Which services are most correlated (if a patient uses one, they're likely to use the other)?  
+* What are the sources of revenue (e.g. insurance, government, private pay, other)?  
+* What services require involvement from multiple departments?  
+* What treatments require involvement from multiple departments?  
+* What patients require involvement from multiple departments?  
+* What is the average fill rate for the hospital beds?  
+* What seasonal effects can be found?  
+    + Optional services at the end of the year  
+    + Flu season  
+    + Surgical procedures before holidays  
+* What are the patient mortality rates?  
+    + By department  
+    + By doctor  
+    + By procedure  
+  
+  
+## 2 Entities we should include:
+
+* Patients
+* Physicians
+* Departments
+* Visits
+* Conditions
+* Accounts
+* Transactions
+* Treatments
+
+## 3 Relationships between entities:
+
+* Patients should link to:
+    + Visits
+    + Accounts
+    + Transactions
+    + Conditions
+    + Treatments
+* Physicians should link to:
+    + Visits
+    + Treatments
+    + Departments
+* Departments should link to:
+    + Physicians
+    + Visits
+    + Conditions
+* Visits should link to:
+    + Patients
+    + Physicians
+    + Conditions
+    + Treatments
+    + Departments
+* Conditions should link to 
+    + Patients
+    + Visits
+    + Departments
+    + Treatments
+* Accounts should link to
+    + Patients
+    + Transactions
+* Transactions should link to
+    + Accounts
+    + Patients
+    + Visits
+    + Treatments
+* Treatments should link to
+    + Patients
+    + Visits
+    + Physicians
+    + Conditions
+    + Transactions
+
+
+
+## 4 Draw a diagram of the entities above and their relationships
+
+* I frankly think we should just draw this in paint or vizio and include the image to make the code easier to run. - Jordan
+
+## 5 Attributes for each entity
+
+* Patients should include
+    + Unique identifier
+    + Name
+    + Age
+    + Date of first visit
+    + Date of last visit
+* Physicians should include
+    + Unique identifier
+    + Name
+    + Department
+    + Specialty
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
