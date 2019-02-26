@@ -141,10 +141,13 @@ dr_o <- -(t - output)*output*(1 - output)
 # get weight deltas using these node deltas and the learning rate
 backpass_wkjho1 <- wkjho1 - eta*dr_o[1]
 backpass_wkjho2 <- wkjho2 - eta*dr_o[2]
-backpass_h1 <- backpass_wkjho1
+
 ```
 
 
+```{r hidden to input}
+
+```
 
 
 
@@ -199,21 +202,14 @@ e1output
 # create input as a column vector
 Xix2 <- c(1,0,1)
 
-# create weights using row vectors
-e2wjixh1 <- c(-0.4, 0.2, 0.1)
-e2wjixh2 <- c(-0.2, 0.4, -0.1)
-e2wkjho1 <- c(0.1, -0.2, 0.1)
-e2wkjho2 <- c(0.4, -0.1, 0.1)
-
-
 ```
 
 
 ```{r epoch 2 h_layer}
-e2h1 <- sum(Xix2 * e2wjixh1)
+e2h1 <- sum(Xix2 * e1wjixh1)
 e2sigh1 <- sigmoid(e2h1, method = "logistic")
 # outh1 <- 1/(1 + log(-h1))
-e2h2 <- sum(Xix2 * e2wjixh2)
+e2h2 <- sum(Xix2 * e1wjixh2)
 e2sigh2 <- sigmoid(e2h2, method = "logistic")
 # outh2 <- 1/(1 + log(-h2))
 e2h <- c(1,e2sigh1,e2sigh2)
@@ -222,10 +218,10 @@ e2h
 
 
 ```{r epoch 2 output layer}
-e2o1 <- sum(e2sigh1 * e2wkjho1)
+e2o1 <- sum(e2sigh1 * e1wkjho1)
 e2sigo1 <- sigmoid(e2o1, method = "logistic")
 # outo1 <- 1/(1 + log(-o1))
-e2o2 <- sum(e2sigh2 * e2wkjho2)
+e2o2 <- sum(e2sigh2 * e1wkjho2)
 e2sigo2 <- sigmoid(e2o2, method = "logistic")
 # outo2 <- 1/(1 + log(-o2))
 e2output <- c(e2sigo1, e2sigo2)

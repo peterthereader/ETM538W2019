@@ -88,7 +88,6 @@ library(readxl)
     + Accounts
     + Patients
     + Visits
-    + Treatments
 * Treatments should link to
     + Patients
     + Visits
@@ -100,23 +99,44 @@ library(readxl)
 
 ## 4 Draw a diagram of the entities above and their relationships
 
-* I frankly think we should just draw this in paint or vizio and include the image to make the code easier to run. - Jordan
+![dataWarehouseMap](dataWarehouseMap.jpeg)
 
 ## 5 Attributes for each entity
 
 * Patients should include
-    + Unique identifier
-    + Name
-    + Age
-    + Date of first visit
-    + Date of last visit
+    + unique identifier/account number
+    + name
+    + date of birth
+    + date of first visit
+    + date of last visit (wouldn't this have to autoupdate from Visits?)
 * Physicians should include
-    + Unique identifier
-    + Name
-    + Department
-    + Specialty
-  
-  
+    + unique identifier
+    + physician name
+    + department
+    + specialty
+* Visits should include
+    + dates/times
+    + patient name
+    + patient date of birth
+    + physician name
+    + diagnostic code / condition
+    + treatment
+    + notes/follow up
+ * Accounts should include
+    + patient name
+    + patient date of birth
+    + patient address + zip
+    + unique identifier/account number
+    + insurance carrier + info
+    + Primary Care Physician info
+ * Transactions should include
+    + account number 
+    + patient name
+    + patient address + zip
+    + insurance carrier + info
+    + physician name
+    + visit date
+    + diagnostic code / condition
 
 
 
