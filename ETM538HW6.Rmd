@@ -99,7 +99,7 @@ library(readxl)
 
 ## 4 Draw a diagram of the entities above and their relationships
 
-![dataWarehouseMap](dataWarehouseMap.jpeg)
+![dataWarehouseMap](dataWarehouseMap.png)
 
 ## 5 Attributes for each entity
 
