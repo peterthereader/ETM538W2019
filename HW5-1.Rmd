@@ -1,0 +1,352 @@
+---
+title: "HW5"
+author:
+- Jordan Hilton
+- Mengyu Li  
+- Peter Boss
+- Andey Nunes, MS
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_notebook
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+packages <- c("DiagrammeR", "knitr", "pander", "tidyverse","readxl","hclust", "sigmoid")
+
+lapply(packages, require, character.only = T)
+
+options(digits = 2, scipen = 999)
+
+```
+
+# This assignment makes use of the following packages AND dependencies: 
+
++ `DiagrammeR`
++ 
++ `hclust`
++ `knitr`
++ 
++ `pander`
++ `tidyverse`
+
+Prior to rendering this document please update R, RStudio, and the associated packages to ensure optimal experience.
+
+# 5-1 – Neural Networks
+## Neural Networks part 5-1-1: Forward-propagation
+
+
+```{r in_class exercise info}
+# create input as a column vector
+Xix2 <- c(1,0,1)
+# create weights using row vectors
+wjixh1 <- c(-0.4, 0.2, 0.1)
+wjixh2 <- c(-0.2, 0.4, -0.1)
+wkjho1 <- c(0.1, -0.2, 0.1)
+wkjho2 <- c(0.4, -0.1, 0.1)
+# activation function from prior exercise
+a <- function(x) if (x > 0) {1} else {0}
+```
+
+```{r h_layer}
+h1 <- sum(Xix2 * wjixh1)
+sigh1 <- sigmoid(h1, method = "logistic")
+# outh1 <- 1/(1 + log(-h1))
+h2 <- sum(Xix2 * wjixh2)
+sigh2 <- sigmoid(h2, method = "logistic")
+# outh2 <- 1/(1 + log(-h2))
+h <- c(1,sigh1,sigh2)
+h
+```
+
+what are the activations of the hidden and output units after forward-propagation of the input x2 = (0, 1)?
+The hidden layer has activation of each node, here the 1 is the bias, and the other nodes are greater than 0.
+
+```{r output layer}
+o1 <- sum(sigh1 * wkjho1)
+sigo1 <- sigmoid(o1, method = "logistic")
+# outo1 <- 1/(1 + log(-o1))
+o2 <- sum(sigh2 * wkjho2)
+sigo2 <- sigmoid(o2, method = "logistic")
+# outo2 <- 1/(1 + log(-o2))
+output <- c(sigo1, sigo2)
+output
+```
+
+
+
+## Neural Networks part 5-1-2: Back-propagation
+
+Suppose x2 has target output t = (.1, .9). What are the weights after back-propagation on this example? Again, use learning rate η = 0.1 and momentum α = 0.9.
+
+*add and name code chunks here*
+```{r back prop on x2}
+# create target as a column vector
+t <- c(0.1, 0.9)
+eta <- 0.1
+alpha <- 0.9
+# create input as a column vector
+Xix2 <- c(1,0,1)
+#For both the initial input (1, 0) and the 2nd input (0,1), calculate the outputs using both the initial weights, the weights after 1 epoch, and the final weights after 2 epochs. Comment on the results compared to the targets.
+# create weights using row vectors
+wjixh1 <- c(-0.4, 0.2, 0.1)
+wjixh2 <- c(-0.2, 0.4, -0.1)
+wkjho1 <- c(0.1, -0.2, 0.1)
+wkjho2 <- c(0.4, -0.1, 0.1)
+```
+
+
+```{r from target output}
+# get the node delta using the target and the output nodes
+dr_o <- -(t - output)*output*(1 - output)
+# get weight deltas using these node deltas and the learning rate
+backpass_wkjho1 <- wkjho1 - eta*dr_o[1]
+backpass_wkjho2 <- wkjho2 - eta*dr_o[2]
+backpass_h1 <- backpass_wkjho1
+```
+
+
+
+> Please provide all the answers in the template “ETM 538 Template Winter 2019 Assignment 5 Neural Network”. Provide also the excel table or R code or… that allowed you to fill the template.
+
+
+In R there is a way to do a parameterized report template using an R Notebook. The way to do is is to use the notebook R code to generate a set of Parameters that are then passed in the YAML header to a separate .Rmd template file, which then renders the document using the parameters.
+
+
+
+
+## Neural Networks part 5-1-3: two epochs
+
+For both the initial input (1, 0) and the 2nd input (0, 1), calculate the outputs using both the initial weights, the weights after 1 epoch, and the final weights after 2 epochs. Comment on the results compared to the targets.
+
+#### Epoch 1
+```{r full two input exercise info}
+# create input as a column vector
+Xix1 <- c(1,1,0)
+# create weights using row vectors
+e1wjixh1 <- c(-0.4, 0.2, 0.1)
+e1wjixh2 <- c(-0.2, 0.4, -0.1)
+e1wkjho1 <- c(0.1, -0.2, 0.1)
+e1wkjho2 <- c(0.4, -0.1, 0.1)
+```
+
+
+```{r epoch 1 h_layer}
+e1h1 <- sum(Xix1 * e1wjixh1)
+e1sigh1 <- sigmoid(e1h1, method = "logistic" )
+# outh1 <- 1/(1 + log(-h1))
+e1h2 <- sum(Xix1 * e1wjixh2)
+e1sigh2 <- sigmoid(e1h2, method = "logistic" )
+# outh2 <- 1/(1 + log(-h2))
+e1h <- c(1,e1sigh1,e1sigh2)
+e1h
+```
+
+
+```{r epoch 1 output layer}
+e1o1 <- sum(e1sigh1 * e1wkjho1)
+e1sigo1 <- sigmoid(e1o1, method = "logistic")
+# outo1 <- 1/(1 + log(-o1))
+e1o2 <- sum(e1sigh2 * e1wkjho2)
+e1sigo2 <- sigmoid(e1o2, method = "logistic")
+# outo2 <- 1/(1 + log(-o2))
+e1output <- c(e1sigo1, e1sigo2)
+e1output
+```
+
+#### Epoch 2
+```{r epoch 2 input exercise info}
+# create input as a column vector
+Xix2 <- c(1,0,1)
+# create weights using row vectors
+e2wjixh1 <- c(-0.4, 0.2, 0.1)
+e2wjixh2 <- c(-0.2, 0.4, -0.1)
+e2wkjho1 <- c(0.1, -0.2, 0.1)
+e2wkjho2 <- c(0.4, -0.1, 0.1)
+```
+
+
+```{r epoch 2 h_layer}
+e2h1 <- sum(Xix2 * e2wjixh1)
+e2sigh1 <- sigmoid(e2h1, method = "logistic")
+# outh1 <- 1/(1 + log(-h1))
+e2h2 <- sum(Xix2 * e2wjixh2)
+e2sigh2 <- sigmoid(e2h2, method = "logistic")
+# outh2 <- 1/(1 + log(-h2))
+e2h <- c(1,e2sigh1,e2sigh2)
+e2h
+```
+
+
+```{r epoch 2 output layer}
+e2o1 <- sum(e2sigh1 * e2wkjho1)
+e2sigo1 <- sigmoid(e2o1, method = "logistic")
+# outo1 <- 1/(1 + log(-o1))
+e2o2 <- sum(e2sigh2 * e2wkjho2)
+e2sigo2 <- sigmoid(e2o2, method = "logistic")
+# outo2 <- 1/(1 + log(-o2))
+e2output <- c(e2sigo1, e2sigo2)
+e2output
+```
+
+#### Error rates 
+
+We can calculate the total error at the end of each epoch using the squared error function.
+
+
+```{r epoch 1 error}
+E1 <- sum(0.5*(t - e1output)^2)
+```
+
+The error rate for the first epoch output is `r E1`.
+
+```{r epoch 2 error}
+E2 <- sum(0.5*(t - e2output)^2)
+```
+
+
+## Instance-Based Learning Part A
+
+### Question 1
+
+Outlook can be sunny, overcast, or rainy (3); temp can be hot, mild or cool (3); humidity can be high or normal (2), and windy can be false or true (2); so there are $3*3*2*2=36$ total possible cases that can be considered.
+
+### Question 2
+
+To do this, let me load in our data, assign variable weights, and create a little distance-calculation function. We're also going to generate a list of all possible observations.
+
+```{r load}
+instancedata<- read_excel("Instance Based Classification v2.xlsx") ## load the spreadsheet
+instancedata<- data.frame(instancedata[-c(15:16),-c(6:11)]) ##drop the calculated distance columns and also the last two rows
+instances<-instancedata[-5] ##create a table without the outcome for measuring distances
+head(instancedata)
+```
+
+Here we're just assigning values to the weight for each variable:
+
+```{r assignweights}
+weights<-c(1,1,1,1) ## make a vector of variable weights
+names(weights)<-c("outlook", "temp", "humid", "windy")  ##name them so we don't forget
+weights
+```
+
+Here we're creating a function to calculate the Manhattan distance between two observations:
+
+```{r calculatedistance}
+distance<-function(x,y){
+  matching<-x==y # returns a list of booleans if each element matches
+  result<-4-as.numeric(matching) %*% weights #converts our list of matches to numeric instead of boolean, and then multiplies by variable weights, then we subtract from 4 to find the number of not-matching variables
+  return(result[1,1]) #the result is a matrix so we just grab the value out of it
+}
+```
+
+And here we're generating a table of all possible observations and noting that the table has 36 rows:
+
+```{r possibleclasses}
+possibleclasses <- expand.grid(levels(as.factor(instances$Outlook)),levels(as.factor(instances$Temp)),levels(as.factor(instances$Humid)),levels(as.factor(instances$Windy)))
+colnames(possibleclasses)<-c("Outlook", "Temp", "Humid", "Windy") #this fanciness just generates a list of all combinations of possible observations
+head(possibleclasses)
+length(possibleclasses[,1])
+```
+
+Now as an example, let's look at the distance between the first row of the possible classes table and the instances table:
+
+```{r example1}
+possibleclasses[1,]
+instances[1,]
+distance(possibleclasses[1,], instances[1,])
+```
+
+We can see that the Manhattan distance is 2, since the rows differ for 2 variables. 
+
+Let's get around to finally answering the question. I'm interpreting a "unique" answer to mean a possible observation has exactly 1 row of the data for which its Manhattan distance is minimum, and an "unambiguous" answer to be one for which all of the rows of the data which are at minimum distance have the same value for the outcome, "play". Let's start by generating a table where we calculate all the distances
+
+```{r distancestable}
+distancesbyrow<-data.frame() #36 rows iterated by i for possibles, 14 columns iterated by j for instances
+
+for(i in 1:36){
+  for(j in 1:14){
+    distancesbyrow[i,j]=distance(possibleclasses[i,],instances[j,])  # calculate the distance between every  possible row and data row, store the results
+  }
+}
+
+head(distancesbyrow)
+```
+
+Now let's create a table that stores the minimum distance for each possible observation, counts the number of occurrences for that minimum distance, and finally determines whether or not all of those instances of the minimum distance have matching values for "play":
+
+```{r resultstable}
+distanceresults<-data.frame() #36 rows, one for each possible class. first column is minimum distances, second column is occurences of the minimum distance
+
+for(i in 1:36){ #traversing across the 36 possible cases
+  distanceresults[i,1]<-min(distancesbyrow[i,]) #the minimum distance for each row of distancesbyrow
+  distanceresults[i,2]<-sum(distanceresults[i,1]==distancesbyrow[i,]) #the number of occurences of this minimum value
+  distanceresults[i,3]<-instancedata[which.min(distancesbyrow[i,]),5] ## pulls the "play" value for the first index which has the minimum value
+  for(j in 1:14){ ## traversing across the 14 distances for one possible case
+    if(distancesbyrow[i,j]==distanceresults[i,1] & instancedata[j,5]!=distanceresults[i,3]){
+      distanceresults[i,3]<-"amb"
+    } ## if the distance for this case is minimum AND the playvalue is not equal to the first playvalue stored, rewrite the playvalue to be ambiguous
+  }
+}
+
+colnames(distanceresults)<-c("minimumdistance","occurrences", "playvalue")
+head(distanceresults)
+sum(distanceresults$occurrences==1) # the number of possible classes that have a unique closest neighbor in the data
+sum(distanceresults$playvalue!="amb") # the number of unambiguous results
+```
+
+So to finally answer the question, there are 17 possible cases with a unique closest neighbor in the data set, and 26 with an unambiguous result in the playvalues of its closest neighbors.
+
+
+### Question 3
+
+Well, the maximum number of answers for "playvalue" is 2, since playvalue can be either "yes" or "no", and all of 10 of the ambiguous cases identified above will have both "yes" and "no" for playvalue in their nearest neighbors. Let me instead hand you the possible case with the highest number of nearest neighbors and show you that it's ambiguous:
+
+```{r highestoccurrences}
+which.max(distanceresults$occurrences) #which possible case has the highest number of nearest neighbors?
+possibleclasses[27,] #let's look at what the case looks like
+distanceresults$minimumdistance[27] #what is the minimum distance?
+distanceresults$occurrences[27] #how many nearest neighbors does it have?
+instancedata[c(2,8,11,12,14),] #here are the five rows that are distance 1 from this possible case, with ambiguous playvalues
+```
+
+
+
+### Question 4
+
+The distances in the spreadsheet are Manhattan distances - they're the linear sum of the weighted distances of the case in question against the dataset. The Euclidean distance would be the sum of the squares of the weighted distances. These happen to be equivalent when the weight is 1.
+
+### Question 5
+
+The weights change the importance of each variable in our distance calculation; a higher weight will cause a non-matching variable to have a higher "distance" between the observation and the data.
+
+### Question 6
+
+We did this by just rerunning our code from part 3, changing the weights to see what we could get for the highest number of unambiguous possible classes. We did find a set of weights that made all possible classes give an unambiguous result. Our initial instinct was to assign higher weights to the variables with a smaller number of possible values, but that turned out to be the wrong way to go. Here's a table of the results:
+
+```{r weightplaying}
+result1<-c(1,1,2,2,30)
+result2<-c(1,1,2,4,30)
+result3<-c(2,2,1,1,31)
+result4<-c(4,3,1,1,33)
+result5<-c(6,4,2,1,36)
+
+resultstable<-rbind(result1, result2, result3, result4, result5)
+colnames(resultstable)<-c("Outlookweight", "Tempweight", "Humidweight", "Windyweight", "Unambiguous")
+pander(resultstable)
+```
+
+
+## Instance-Based Learning Part B
+The answer for part B are all listed in "Instance_Based_PartB.xlsx" as the following, the excel file is in the attachment.
+```{r}
+
+Part_B_original<-read_excel("Instance_Based_PartB.xlsx", sheet ="original")
+View(Part_B_original)
+
+Part_B_Euclidean<-read_excel("Instance_Based_PartB.xlsx", sheet ="Euclidean")
+View(Part_B_Euclidean)
+
+Part_B_Manhattan<-read_excel("Instance_Based_PartB.xlsx", sheet ="Manhattan")
+View(Part_B_Manhattan)
+```
