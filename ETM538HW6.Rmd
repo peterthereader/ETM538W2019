@@ -7,7 +7,6 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(readxl)
 ```
 
 
@@ -17,13 +16,15 @@ library(readxl)
     + Which procedures can be scaled up to generate more revenue?  
 
 * What are the biggest expenses and can they be minimized?  
-* What are the drivers of length of hospital stay?  E.g. doctor, patient, health record attributes, department, procedure, etc.?  
-* Which patients have the most complications, and which doctors/departments see patients with the highest rates of complications?  
-* Which complications are covered by insurance (i.e. someone else pays) versus ones the hospital is responsible for (i.e. the hospital loses money)?  
-* Which services are the most popular?  
-* Which services are most correlated (if a patient uses one, they're likely to use the other)?  
-* What are the sources of revenue (e.g. insurance, government, private pay, other)?  
+* Which treatments are the most popular?  
 * What services/treatments/patients require involvement from multiple departments?  
+* Which treatments are most correlated (if a patient uses one, they're likely to use the other)? 
+* What are the drivers of length of hospital stay?  E.g. doctor, patient, health record attributes, department, procedure, etc.?  
+
+* Which doctors within the same department have a higher repeat treatment rate?
+* Which patients have the most complications (repeat visits), and which doctors/departments see patients with the highest rates of complications?  
+* Which complications are covered by insurance (i.e. someone else pays) versus ones the hospital is responsible for (i.e. the hospital loses money)?  
+* What are the sources of revenue (e.g. insurance, government, private pay, other)?  
 * What is the average fill rate for the hospital beds?  
   
   
@@ -141,7 +142,6 @@ The following attributes would be derived from raw data figures:
 + Any growth, trend, ratio, or percentage comparison must be derived from other measures
 
 
-## 7 Expand your design to include the entities, relationships, and attributes (both primitive and derived) needed to answer the second set of 5 questions. +10
 
 
 
