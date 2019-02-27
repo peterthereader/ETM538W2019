@@ -13,34 +13,19 @@ library(readxl)
 
 ## 1. List 10 questions you want to be able to answer using the Hospitals Data Warehouse (10%).  
 
-* Which departments generate the most revenue?  
-* Which departments generate the most revenue per patient?  
-* Which procedures generate the most revenue?  
-* Which procedures generate the most revenue per patient?  
-* Which procedures generate the most revenue per hour?  
+* Which departments/procedures generate the most revenue (overall),  the most revenue per patient, and most revenue per quarter(or month)?
     + Which procedures can be scaled up to generate more revenue?  
-* What equipment is required for these procedures?  
-* What disposables are required for these procedures?  
-* What are the biggest expenses?  How can they be minimized?  
+
+* What are the biggest expenses and can they be minimized?  
 * What are the drivers of length of hospital stay?  E.g. doctor, patient, health record attributes, department, procedure, etc.?  
-* Which patients have the most complications?  
-* Which doctors see patients with the highest rates of complications?  
+* Which patients have the most complications, and which doctors/departments see patients with the highest rates of complications?  
 * Which complications are covered by insurance (i.e. someone else pays) versus ones the hospital is responsible for (i.e. the hospital loses money)?  
 * Which services are the most popular?  
 * Which services are most correlated (if a patient uses one, they're likely to use the other)?  
 * What are the sources of revenue (e.g. insurance, government, private pay, other)?  
-* What services require involvement from multiple departments?  
-* What treatments require involvement from multiple departments?  
-* What patients require involvement from multiple departments?  
+* What services/treatments/patients require involvement from multiple departments?  
 * What is the average fill rate for the hospital beds?  
-* What seasonal effects can be found?  
-    + Optional services at the end of the year  
-    + Flu season  
-    + Surgical procedures before holidays  
-* What are the patient mortality rates?  
-    + By department  
-    + By doctor  
-    + By procedure  
+  
   
   
 ## 2 Entities we should include:
@@ -53,6 +38,7 @@ library(readxl)
 * Accounts
 * Transactions
 * Treatments
+
 
 ## 3 Relationships between entities:
 
@@ -88,7 +74,6 @@ library(readxl)
     + Accounts
     + Patients
     + Visits
-    + Treatments
 * Treatments should link to
     + Patients
     + Visits
@@ -99,32 +84,64 @@ library(readxl)
 
 
 ## 4 Draw a diagram of the entities above and their relationships
+*Please refer to Figure 1: dataWarehouseMap
 
-* I frankly think we should just draw this in paint or vizio and include the image to make the code easier to run. - Jordan
+![dataWarehouseMap](dataWarehouseMap.png)
 
 ## 5 Attributes for each entity
 
 * Patients should include
-    + Unique identifier
-    + Name
-    + Age
-    + Date of first visit
-    + Date of last visit
+    + unique identifier/account number
+    + name
+    + date of birth
+    + date of first visit
+    + date of last visit (wouldn't this have to autoupdate from Visits?)
 * Physicians should include
-    + Unique identifier
-    + Name
-    + Department
-    + Specialty
-  
-  
+    + unique identifier
+    + physician name 
+    + department
+    + specialty
+* Visits should include
+    + dates/times
+    + patient ID
+    + physician ID
+    + diagnostic code / condition
+    + treatment
+    + notes/follow up
+ * Accounts should include
+    + patient name
+    + patient date of birth
+    + patient address + zip
+    + unique identifier/account number
+    + insurance carrier + info
+    + Primary Care Physician info
+ * Transactions should include
+    + account number 
+    + patient name
+    + patient address + zip
+    + insurance carrier + info
+    + physician name
+    + visit date
+    + diagnostic code / condition
+
+## 6 Primitive vs Derived attributes
+
+The following attributes must be primitive (raw data):
+
++ All date and time information (including birthdates)
++ patient/physician/facility/insurance carrier names
++ addresses and contact information
++ unique identifiers/account numbers
++ diagnosis condition
+
+The following attributes would be derived from raw data figures:
++ Yearly/Quaterly/Monthly cost of each patient (derived from patients and transactions)
++ Yearly/Quaterly/Monthly visits of each patient (derived from patients and visits)
++ Yearly/Quaterly/Monthly visits for each doctor (derived from physicians and visits)
++ Any growth, trend, ratio, or percentage comparison must be derived from other measures
 
 
-
-
-
-
-
-
+## 7 Expand your design to include the entities, relationships, and attributes (both primitive and derived) needed to answer the second set of 5 questions. +10
 
 
 
