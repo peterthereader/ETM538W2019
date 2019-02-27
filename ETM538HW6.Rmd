@@ -98,6 +98,7 @@ library(readxl)
 
 
 ## 4 Draw a diagram of the entities above and their relationships
+*Please refer to Figure 1: dataWarehouseMap
 
 ![dataWarehouseMap](dataWarehouseMap.png)
 
@@ -155,12 +156,6 @@ The following attributes would be derived from raw data figures:
 
 
 ## 7 Expand your design to include the entities, relationships, and attributes (both primitive and derived) needed to answer the second set of 5 questions. +10
-
-> I guess we should narrow it down to 5 for all the previous questions and then drop 5 other questions down here...
-
-
-
-
 
 
 
