@@ -138,9 +138,27 @@ library(readxl)
     + visit date
     + diagnostic code / condition
 
+## 6 Primitive vs Derived attributes
+
+The following attributes must be primitive (raw data):
+
++ All date and time information (including birthdates)
++ patient/physician/facility/insurance carrier names
++ addresses and contact information
++ unique identifiers/account numbers
++ diagnosis condition
+
+The following attributes would be derived from raw data figures:
+
++ Diagnostic codes (derived from diagnosis)
++ All cost data (derived from visits and diagnosis)
++ Any interval of time (date of last visit)
++ Any growth, trend, ratio, or percentage comparison must be derived from other measures
 
 
+## 7 Expand your design to include the entities, relationships, and attributes (both primitive and derived) needed to answer the second set of 5 questions. +10
 
+> I guess we should narrow it down to 5 for all the previous questions and then drop 5 other questions down here...
 
 
 
