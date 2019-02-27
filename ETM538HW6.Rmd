@@ -111,14 +111,13 @@ library(readxl)
     + date of last visit (wouldn't this have to autoupdate from Visits?)
 * Physicians should include
     + unique identifier
-    + physician name
+    + physician name 
     + department
     + specialty
 * Visits should include
     + dates/times
-    + patient name
-    + patient date of birth
-    + physician name
+    + patient ID
+    + physician ID
     + diagnostic code / condition
     + treatment
     + notes/follow up
@@ -149,10 +148,9 @@ The following attributes must be primitive (raw data):
 + diagnosis condition
 
 The following attributes would be derived from raw data figures:
-
-+ Diagnostic codes (derived from diagnosis)
-+ All cost data (derived from visits and diagnosis)
-+ Any interval of time (date of last visit)
++ Yearly/Quaterly/Monthly cost of each patient (derived from patients and transactions)
++ Yearly/Quaterly/Monthly visits of each patient (derived from patients and visits)
++ Yearly/Quaterly/Monthly visits for each doctor (derived from physicians and visits)
 + Any growth, trend, ratio, or percentage comparison must be derived from other measures
 
 
