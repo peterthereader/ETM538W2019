@@ -1,0 +1,62 @@
+---
+title: "knn-project"
+author: "Jordan Hilton"
+date: "February 23, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+We're going to perform a simple linear regression analysis of the data first. Let's begin with loading the data 
+
+```{r load}
+data<-read.csv("projectdata.csv")
+```
+
+Let's take a glance at the full data before we go any further:
+
+```{r glance}
+head(data)
+```
+
+Note that it appears that every donation is 250 c.c., so the "total volume donated" column is a linear multiple of the "number of donations" column. Our linear regression will not like it if we include both columns, so we're going to drop the total volume column before proceeding. While we're at it let's drop the first "id" column since it's not relevant to analysis.
+
+
+```{r dropandcale}
+data<-data[-c(1,4)]
+```
+
+
+Now let's just create the full multivariate linear regression model and examine it;
+
+```{r fullmodel}
+fullmodel<-lm(Made.Donation.in.March.2007~Months.since.Last.Donation+Number.of.Donations+Months.since.First.Donation, data=data)
+summary(fullmodel)
+```
+
+While the model as a whole is statistically significant with a p-value of $2.6*10^{-15}$, the low $R^2$ indicates that our 3 independent variables don't do a good job of predicting blood donation in the linear model. Each model is significant in the full model, but let's formally check that it's appropriate to use each variable:
+
+```{r step}
+step(fullmodel)
+```
+
+Each variable does contribute sufficiently to a reduction in the sum of the squares of error, and we can't reduce our AIC by eliminating a variable. Let's examine some residual plots:
+
+```{r plot}
+plot(fullmodel)
+```
+
+These residual plots look awful- our error is not normally distributed, and there are high leverage points. We could attempt to transform the data to be more appropriate, but with this distribution of error, our low $R^2$, and the binary nature of our class variable what we should do instead is just say that this problem is not appropriate for linear modeling. 
+
+Just for the purpose of checking our other models, here is the prediction the linear model makes for each point in the test data. We can intepret these as predictions of the likelihood of a row in the test set donating blood.
+
+```{r predictions}
+testdata<-read.csv("project test data.csv")
+testdata<-testdata[-c(1,4)]
+lmpredictions<-predict(fullmodel, testdata)
+head(lmpredictions)
+```
+
+
