@@ -1,9 +1,11 @@
 ---
 title: "Blood Donation Classification Prediction"
-subtitle: "using Cross Validation with Random Forest"
 author: "Andey Nunes"
 date: "3/2/2019"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
+subtitle: using Cross Validation with Random Forest
 ---
 
 ```{r setup, include = FALSE}
