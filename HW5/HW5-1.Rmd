@@ -12,7 +12,7 @@ output: html_notebook
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-packages <- c("DiagrammeR", "knitr", "pander", "tidyverse","readxl")
+packages <- c("DiagrammeR", "knitr", "pander", "tidyverse","readxl","hclust", "sigmoid")
 
 lapply(packages, require, character.only = T)
 
@@ -33,22 +33,176 @@ options(digits = 2, scipen = 999)
 Prior to rendering this document please update R, RStudio, and the associated packages to ensure optimal experience.
 
 # 5-1 – Neural Networks
+## Neural Networks part 5-1-1: Forward-propagation
 
-This assignment is simply to do the next epoch of the in-class exercise.
 
-*load the inclass exericise info*
+```{r in_class exercise info}
+# create input as a column vector
+Xix2 <- c(1,0,1)
+# create weights using row vectors
+wjixh1 <- c(-0.4, 0.2, 0.1)
+wjixh2 <- c(-0.2, 0.4, -0.1)
+wkjho1 <- c(0.1, -0.2, 0.1)
+wkjho2 <- c(0.4, -0.1, 0.1)
+# activation function from prior exercise
+a <- function(x) if (x > 0) {1} else {0}
+```
+
+```{r h_layer}
+h1 <- sum(Xix2 * wjixh1)
+sigh1 <- sigmoid(h1, method = "logistic")
+# outh1 <- 1/(1 + log(-h1))
+h2 <- sum(Xix2 * wjixh2)
+sigh2 <- sigmoid(h2, method = "logistic")
+# outh2 <- 1/(1 + log(-h2))
+h <- c(1,sigh1,sigh2)
+h
+```
 
 what are the activations of the hidden and output units after forward-propagation of the input x2 = (0, 1)?
+The hidden layer has activation of each node, here the 1 is the bias, and the other nodes are greater than 0.
+
+```{r output layer}
+o1 <- sum(sigh1 * wkjho1)
+sigo1 <- sigmoid(o1, method = "logistic")
+# outo1 <- 1/(1 + log(-o1))
+o2 <- sum(sigh2 * wkjho2)
+sigo2 <- sigmoid(o2, method = "logistic")
+# outo2 <- 1/(1 + log(-o2))
+output <- c(sigo1, sigo2)
+output
+```
 
 
+
+## Neural Networks part 5-1-2: Back-propagation
 
 Suppose x2 has target output t = (.1, .9). What are the weights after back-propagation on this example? Again, use learning rate η = 0.1 and momentum α = 0.9.
 
 *add and name code chunks here*
+```{r back prop on x2}
+# create target as a column vector
+t <- c(0.1, 0.9)
+eta <- 0.1
+alpha <- 0.9
+# create input as a column vector
+Xix2 <- c(1,0,1)
+#For both the initial input (1, 0) and the 2nd input (0,1), calculate the outputs using both the initial weights, the weights after 1 epoch, and the final weights after 2 epochs. Comment on the results compared to the targets.
+# create weights using row vectors
+wjixh1 <- c(-0.4, 0.2, 0.1)
+wjixh2 <- c(-0.2, 0.4, -0.1)
+wkjho1 <- c(0.1, -0.2, 0.1)
+wkjho2 <- c(0.4, -0.1, 0.1)
+```
 
-For both the initial input (1, 0) and the 2nd input (0,1), calculate the outputs using both the initial weights, the weights after 1 epoch, and the final weights after 2 epochs. Comment on the results compared to the targets.
+
+```{r from target output}
+# get the node delta using the target and the output nodes
+dr_o <- -(t - output)*output*(1 - output)
+# get weight deltas using these node deltas and the learning rate
+backpass_wkjho1 <- wkjho1 - eta*dr_o[1]
+backpass_wkjho2 <- wkjho2 - eta*dr_o[2]
+backpass_h1 <- backpass_wkjho1
+```
 
 
+
+> Please provide all the answers in the template “ETM 538 Template Winter 2019 Assignment 5 Neural Network”. Provide also the excel table or R code or… that allowed you to fill the template.
+
+
+In R there is a way to do a parameterized report template using an R Notebook. The way to do is is to use the notebook R code to generate a set of Parameters that are then passed in the YAML header to a separate .Rmd template file, which then renders the document using the parameters.
+
+
+
+
+## Neural Networks part 5-1-3: two epochs
+
+For both the initial input (1, 0) and the 2nd input (0, 1), calculate the outputs using both the initial weights, the weights after 1 epoch, and the final weights after 2 epochs. Comment on the results compared to the targets.
+
+#### Epoch 1
+```{r full two input exercise info}
+# create input as a column vector
+Xix1 <- c(1,1,0)
+# create weights using row vectors
+e1wjixh1 <- c(-0.4, 0.2, 0.1)
+e1wjixh2 <- c(-0.2, 0.4, -0.1)
+e1wkjho1 <- c(0.1, -0.2, 0.1)
+e1wkjho2 <- c(0.4, -0.1, 0.1)
+```
+
+
+```{r epoch 1 h_layer}
+e1h1 <- sum(Xix1 * e1wjixh1)
+e1sigh1 <- sigmoid(e1h1, method = "logistic" )
+# outh1 <- 1/(1 + log(-h1))
+e1h2 <- sum(Xix1 * e1wjixh2)
+e1sigh2 <- sigmoid(e1h2, method = "logistic" )
+# outh2 <- 1/(1 + log(-h2))
+e1h <- c(1,e1sigh1,e1sigh2)
+e1h
+```
+
+
+```{r epoch 1 output layer}
+e1o1 <- sum(e1sigh1 * e1wkjho1)
+e1sigo1 <- sigmoid(e1o1, method = "logistic")
+# outo1 <- 1/(1 + log(-o1))
+e1o2 <- sum(e1sigh2 * e1wkjho2)
+e1sigo2 <- sigmoid(e1o2, method = "logistic")
+# outo2 <- 1/(1 + log(-o2))
+e1output <- c(e1sigo1, e1sigo2)
+e1output
+```
+
+#### Epoch 2
+```{r epoch 2 input exercise info}
+# create input as a column vector
+Xix2 <- c(1,0,1)
+# create weights using row vectors
+e2wjixh1 <- c(-0.4, 0.2, 0.1)
+e2wjixh2 <- c(-0.2, 0.4, -0.1)
+e2wkjho1 <- c(0.1, -0.2, 0.1)
+e2wkjho2 <- c(0.4, -0.1, 0.1)
+```
+
+
+```{r epoch 2 h_layer}
+e2h1 <- sum(Xix2 * e2wjixh1)
+e2sigh1 <- sigmoid(e2h1, method = "logistic")
+# outh1 <- 1/(1 + log(-h1))
+e2h2 <- sum(Xix2 * e2wjixh2)
+e2sigh2 <- sigmoid(e2h2, method = "logistic")
+# outh2 <- 1/(1 + log(-h2))
+e2h <- c(1,e2sigh1,e2sigh2)
+e2h
+```
+
+
+```{r epoch 2 output layer}
+e2o1 <- sum(e2sigh1 * e2wkjho1)
+e2sigo1 <- sigmoid(e2o1, method = "logistic")
+# outo1 <- 1/(1 + log(-o1))
+e2o2 <- sum(e2sigh2 * e2wkjho2)
+e2sigo2 <- sigmoid(e2o2, method = "logistic")
+# outo2 <- 1/(1 + log(-o2))
+e2output <- c(e2sigo1, e2sigo2)
+e2output
+```
+
+#### Error rates 
+
+We can calculate the total error at the end of each epoch using the squared error function.
+
+
+```{r epoch 1 error}
+E1 <- sum(0.5*(t - e1output)^2)
+```
+
+The error rate for the first epoch output is `r E1`.
+
+```{r epoch 2 error}
+E2 <- sum(0.5*(t - e2output)^2)
+```
 
 
 ## Instance-Based Learning Part A
