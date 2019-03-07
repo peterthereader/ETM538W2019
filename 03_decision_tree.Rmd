@@ -1,0 +1,60 @@
+---
+title: "Final project"
+author: "Mengyu Li, Jordan Hilton, Andey Nunes, Peter Boss"
+date: "March 3, 2019"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(e1071)
+```
+
+
+```{r}
+dfRawData <- read.csv('projectdata.csv')
+str(dfRawData)
+```
+# Pre-process data
+```{r}
+dfModelData <- dfRawData[-1] # Exclude the first column
+dfModelData <- na.omit(dfModelData) # remove any NAs
+colnames(dfModelData) <- c('MonthsSinceLastDonation', 'NumberOfDonations', 'TotalVolumeDonatedCC', 'MonthsSinceFirestDonation', 'MadeDonationInMarch2007')
+dfModelData$MadeDonationInMarch2007 <- as.factor(dfModelData$MadeDonationInMarch2007)
+```
+
+# Split data into train and test data
+```{r}
+# Split the data into training and test set
+set.seed(123)
+# 80% of data are selected as train data
+trnSamples <- dfModelData$MadeDonationInMarch2007 %>% 
+  createDataPartition(p = 0.8, list = FALSE)
+trnData <- dfModelData[trnSamples, ]
+testData <- dfModelData[-trnSamples, ]
+```
+
+
+```{r}
+control <- trainControl(method = 'repeatedcv', number = 10, repeats = 5)
+# Train the model
+model_DT <- train(MadeDonationInMarch2007 ~., data = trnData, method = 'rpart',  parms = list(split = "information"), tuneLength = 10) #trcontrol = control,
+# Estimate variable importantce
+model_DT
+```
+
+```{r}
+prp(model_DT$finalModel, box.palette = "Reds", tweak = 1.2)
+```
+
+```{r}
+test_pred <- predict(model_DT, newdata = testData)
+confusionMatrix(test_pred, testData$MadeDonationInMarch2007 )  #check accuracy
+```
+

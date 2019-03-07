@@ -1,0 +1,161 @@
+---
+title: "ETM 538, Winter '19, Project Rough Draft"
+author: "Jordan Hilton, Andey Nunes, Mengyu Li, Peter Boss"
+date: "March 6, 2019"
+output: pdf_document
+subtitle: Introduction and K Nearest Neighbors Model
+---
+
+## Introduction for the Rough Draft  
+
+This draft is in 4 pieces because we're still synthesizing everything. The outputs are intended to be read in numerical order. The associated .Rmd files will knit successfully into .html format on machines with current versions of both R Studio and all of the packages we used.  
+
+We are analyzing a data set on blood donations. There are 576 observations on 4 input variables, with 1 binary output variable for whether or not a specific person donated blood in a given month (March 2007). Our business question is how to predict whether or not a donation was made in that month. The answer will have clear ramifications for blood donation services, hospitals, and the healthcare system at large.  
+
+Our analysis is currently split into 4 models, with a PDF for each one: 1) K Nearest Neighbors, 2) Naive Linear Regression, 3) Decision Tree, and 4) Cross-Validation with Random Forest, including another linear regression. The naive linear regression model returned poor results, but we have included it for comparison purposes, and as an example of a the need and importance of more appropriate analysis.  
+
+Further planned work:  
++ Consolidating and streamlining the analysis and presentation.  
++ Direct comparison of models and final model selection based on lowest error rate.  
++ More thorough discussion.  
++ Dividing the KNN model into 10 different hold-outs, performing the analysis across each hold-out, and averaging the results. This should give a more robust result than using a single test set.  
++ Including graphical output in the KNN model.  
++ Deeper exploration of the Random Forest model (expanding the number of trees).  
+
+
+
+## K Nearest Neighbors model  
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(class)
+```
+
+We're going to use the nearest neighbors method to predict blood donations. Let's first load our data, then drop the index column and the result column for our working data:
+
+```{r load}
+data<-read.csv("projectdata.csv")
+head(data)
+instances<-data[-c(1,6)] ##drop the index column and the result column for working purposes
+head(instances)
+```
+
+Now we'll assign weights and scale the data columns by the assigned weights. To start, we just scaled each column by the maximum value.
+
+```{r assignweights}
+weights<-c(1/74,1/50,1/12500,1/98) ## make a vector of independent variable weights, scaling each by the max value to start
+names(weights)<-c("monthssincelast", "numberdonations", "totalvolume", "monthssincefirst")  ##name them so we don't forget
+scaledinstances<-cbind(instances[,1]*weights[1],instances[,2]*weights[2],instances[,3]*weights[3],instances[,4]*weights[4])
+## make a scaled version of our instances so that the distances are equivalent
+head(scaledinstances)
+scaledinstances[1:10,]
+```
+
+We'll now divide our working data into two buckets, one for training which we'll label "data", and one for calculating nearest neighbors to assign weights.
+
+```{r bucketize}
+practicebucket<-scaledinstances[501:576,]
+databucket<-scaledinstances[1:500,]
+```
+
+Here we built a little function to help us calculate Manhattan distances between two different points.
+
+```{r calculatedistance}
+distance<-function(x,y){
+  result<-dist(rbind(x,y), method="manhattan") ## find the manhattan distance between two instances
+  return(as.numeric(result)) #the result is weirdly vectorized so we just grab the value out of it
+}
+```
+
+Here's an example of the calculation of the distance between one of our practice points and one of our data points:
+
+```{r example1}
+databucket[1,]
+practicebucket[1,]
+distance(databucket[1,], practicebucket[1,])
+```
+
+Now we'll create a table where we calculate the distances between each of our practice points and each of the data points. Each column, iterated by j, is a practice point and each row, iterated by j, is a data point.
+
+```{r distancestable}
+distancesbyrow<-data.frame() #length(data) rows iterated by i for data, length(practice) columns iterated by j for practice
+
+for(i in 1:length(databucket[,1])){
+  for(j in 1:length(practicebucket[,1])){
+    distancesbyrow[i,j]<-distance(databucket[i,],practicebucket[j,])  # calculate the distance between every  possible row and data row, store the results
+  }
+}
+
+head(distancesbyrow[,1:6])
+```
+Now we create a table where we tabulate the results: which point in the data is nearest the ith practice point, and what is the value of that point for our class variable (whether or not a donation was made). There is some additional fussing about the case where there are multiple nearest points, but as you can see there are no "ambiguous" values, where multiple nearest points have different values for the class variable.
+
+```{r resultstable}
+distanceresults<-data.frame() #length(practice) rows, one for each test case. first column is minimum distances, second column is occurences of the minimum distance
+
+for(i in 1:length(practicebucket[,1])){ #traversing across our practice data
+  distanceresults[i,1]<-min(distancesbyrow[,i]) #the minimum distance for each column of distancesbyrow
+  distanceresults[i,2]<-sum(distanceresults[i,1]==distancesbyrow[,i]) #the number of occurences of this minimum value
+  distanceresults[i,3]<-data[which.min(distancesbyrow[,i]),6] ## pulls the "donation" value for the first index which has the minimum value
+  for(j in 1:length(practicebucket[,1])){ ## traversing across the distances for one possible case
+    if(distancesbyrow[j,i]==distanceresults[i,1] & data[j,6]!=distanceresults[i,3]){
+     distanceresults[i,3]<-"amb"
+    } ## if the distance for this case is minimum AND the playvalue is not equal to the first playvalue stored, rewrite the playvalue to be ambiguous
+  }
+}
+
+colnames(distanceresults)<-c("minimumdistance","occurrences", "donation")
+head(distanceresults)
+sum(distanceresults$occurrences==1) # the number of possible classes that have a unique closest neighbor in the data
+sum(distanceresults$donation=="amb") # the number of unambiguous results
+```
+
+Let's compare the results of our training against the real donation values:
+
+```{r errorrate}
+predictedresults<-distanceresults[,3]
+originaldata<-data[501:576,6]
+correctanswers<-sum(predictedresults==originaldata)
+errorrate<-1-correctanswers/length(originaldata)
+errorrate
+```
+
+```{r}
+a <- c(1:6, NA)
+mean(a)
+
+```
+
+
+We have an error rate of `r round(errorrate * 100, 1)`%. Ordinarily, the next step would be to run several adjustments to the weight vector, trying to minimize the error rate of the calculated nearest neighbors. Let's instead graduate to using a real k-nearest neighbors package, in the "class" library.
+
+```{r usinglibrary}
+train<-databucket
+test<-practicebucket
+cl<-data[1:500,6]
+libraryresults<-knn(train, test, cl, k=3, prob=TRUE)
+libraryresults
+```
+
+Note that we've told R to look at the 3 nearest neighbors, and the library returns (in the first result) the winning classification for each test row, and also the probability of that classification based on the nearest neighbors. Let's calculate the error rate here:
+
+```{r libraryerror}
+predictedresults<-as.numeric(libraryresults)-1
+originaldata<-data[501:576,6]
+correctanswers<-sum(predictedresults==originaldata)
+errorrate<-1-correctanswers/length(originaldata)
+errorrate
+```
+
+Excellent, the professionals have reduced our error rate by almost half. Let's quickly calculate the predictions using the prebuilt library for the test data set for the contest.
+
+```{r predictions}
+testdata<-read.csv("project test data.csv")
+testdata<-testdata[-c(1,6)]
+testdata<-cbind(testdata[,1]*weights[1],testdata[,2]*weights[2],testdata[,3]*weights[3],testdata[,4]*weights[4])
+train<-scaledinstances
+test<-testdata
+cl<-data[,6]
+libraryfullresults<-knn(train, test, cl, k=3, prob=TRUE)
+head(libraryfullresults)
+```
