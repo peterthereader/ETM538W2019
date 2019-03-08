@@ -11,6 +11,7 @@
 
 <meta name="author" content="Andey Nunes" />
 
+<meta name="date" content="2019-03-07" />
 
 <title>Blood Donation Classification Prediction</title>
 
@@ -189,7 +190,7 @@ $(document).ready(function () {
 <h1 class="title toc-ignore">Blood Donation Classification Prediction</h1>
 <h3 class="subtitle"><em>using Cross Validation with Random Forest</em></h3>
 <h4 class="author"><em>Andey Nunes</em></h4>
-<h4 class="date"><em>3/2/2019</em></h4>
+<h4 class="date"><em>March 07, 2019</em></h4>
 
 </div>
 
@@ -245,6 +246,7 @@ corrplot.mixed(corr_mat)</code></pre>
 </div>
 <div id="cross-validation-folds-splits" class="section level1">
 <h1>Cross Validation Folds &amp; Splits</h1>
+<p>The workflow and code used here is adapted from the <em>Machine Learning in the Tidyverse</em> course by Dmitriy Gorenshteyn (DataCamp 2019). The approach involves using list-columns to store list objects (such as model output) in a tibble, which is a special R data frame. These lists can then be iterated over with specialized <code>map</code> functions from the <code>purrr</code> package to calculate and extract information.</p>
 <p>Using the training data, we will create a 5-fold cross-validation split tibble. This will set us up to itertively generate multiple models on our new train/validation subsets.</p>
 <pre class="r"><code># using the rsample library
 cv_split &lt;- vfold_cv(training, v = 5)
@@ -269,29 +271,36 @@ glimpse(cv_data)</code></pre>
 <pre class="r"><code>cv_models_lm &lt;- cv_data %&gt;%
    mutate(lm_model = map(train, ~lm(formula = target~., data = .x)))</code></pre>
 </div>
-<div id="knn" class="section level3">
-<h3>knn ?</h3>
+<div id="other-models" class="section level3">
+<h3>other models</h3>
+<p>use the linear model and random forest model code chunks as examples for making another object holding the cross-validation data sets and the specified models.</p>
 </div>
 <div id="random-forest" class="section level3">
 <h3>random forest</h3>
-<pre class="r"><code># Build a random forest model for each fold
+<pre class="r"><code># set forest parameter
+n_trees &lt;- 500
+# Build a random forest model for each fold
 cv_models_rf &lt;- cv_data %&gt;% 
   mutate(rf_model = map(train, ~ranger(formula = target~., data = .x,
-                                    num.trees = 100, seed = 123)))</code></pre>
+                                    num.trees = n_trees,)))</code></pre>
 </div>
 </div>
 <div id="model-evaluation" class="section level1">
 <h1>Model evaluation</h1>
-<p>The <em>cross-validation model evaluation process</em> follows the same general set of steps iterated over each fold: 1. extract the actual target values from the validation set 2. use the models to make target predictions that will be compared to the actual target 3. for each fold, calculate the Mean Absolute Error (<code>MAE</code>) where $ MAE =  $ 4. Take the average over all MAE values to determine with model performs best on these sets of training &amp; validation splits</p>
+<p>The <em>cross-validation model evaluation process</em> follows the same general set of steps iterated over each fold: 1. extract the actual target values from the validation set 2. use the models to make target predictions that will be compared to the actual target 3. for each fold, calculate the Mean Absolute Error (<code>MAE</code>) where <span class="math display">\[ MAE = \frac{\sum^n_{i=1}|Actual_i - Predicted_i|}{n} \]</span> 4. Take the average over all MAE values to determine which model performs best on these sets of training &amp; validation splits</p>
+<p>In the following subsections, the eval code chunk follows a similar pattern:</p>
+<ul>
+<li>the <em>actual</em> and <em>predicted</em> values are extracted from the validation sets into a <code>cv_prep_</code></li>
+</ul>
+<p>Lets see how other models and randocompared.</p>
 <div id="linear-model-1" class="section level3">
 <h3>linear model</h3>
 <pre class="r"><code># extract actual values
 cv_prep_lm &lt;- cv_models_lm %&gt;%
    mutate(validate_actual = map(validate, ~.x$target),
           validate_predicted = map2(.x = lm_model, .y = validate, 
-                                    ~predict(.x, .y)))
-
-# the function mae() is from library(Metrics)
+                                    ~predict(.x, .y)))</code></pre>
+<pre class="r"><code># the function mae() is from library(Metrics)
 # Calculate the mean absolute error for each validate fold 
 cv_eval_lm &lt;- cv_prep_lm %&gt;% 
   mutate(validate_mae = map2_dbl(.x = validate_actual, 
@@ -300,13 +309,13 @@ cv_eval_lm &lt;- cv_prep_lm %&gt;%
 
 # Print the validate_mae column
 cv_eval_lm$validate_mae</code></pre>
-<pre><code>##    1    2    3    4    5 
-## 0.32 0.32 0.35 0.33 0.32</code></pre>
-<p>The average mean absolute error across all linear models was 0.33.</p>
-<p>Lets see how other models compared.</p>
+<pre><code>##      1      2      3      4      5 
+## 0.3233 0.3242 0.3536 0.3350 0.3155</code></pre>
+<p>The average mean absolute error across all linear models was 0.3303.</p>
 </div>
-<div id="knn-1" class="section level3">
-<h3>knn ?</h3>
+<div id="other-models-1" class="section level3">
+<h3>other models</h3>
+<p>use the linear model and random forest model code chunks as examples for making another object holding the cross-validation data sets and the specified models.</p>
 </div>
 <div id="random-forest-1" class="section level3">
 <h3>random forest</h3>
@@ -320,12 +329,12 @@ cv_eval_rf &lt;- cv_prep_rf %&gt;%
 
 # Print the validate_mae column
 cv_eval_rf$validate_mae</code></pre>
-<pre><code>##    1    2    3    4    5 
-## 0.30 0.31 0.30 0.31 0.29</code></pre>
+<pre><code>##      1      2      3      4      5 
+## 0.3048 0.3116 0.3001 0.3101 0.2878</code></pre>
 <pre class="r"><code># Calculate the mean of validate_mae column
 mean(cv_eval_rf$validate_mae)</code></pre>
-<pre><code>## [1] 0.3</code></pre>
-<p>Tune hyper-parameters</p>
+<pre><code>## [1] 0.3029</code></pre>
+<p><strong>Tune hyper-parameters</strong></p>
 <pre class="r"><code># Prepare for tuning cross validation folds by varying mtry
 cv_tune &lt;- cv_data %&gt;% 
    crossing(mtry = 1:3)
@@ -335,7 +344,7 @@ cv_model_tunerf &lt;- cv_tune %&gt;%
   mutate(rf_model = 
             map2(.x = train, .y = mtry, 
                  ~ranger(formula = target~., data = .x, 
-                         mtry = .y, num.trees = 100, seed = 123)))
+                         mtry = .y, num.trees = n_trees)))
 
 glimpse(cv_model_tunerf) </code></pre>
 <pre><code>## Observations: 15
@@ -345,7 +354,7 @@ glimpse(cv_model_tunerf) </code></pre>
 ## $ train    &lt;list&gt; [&lt;tbl_df[460 x 4]&gt;, &lt;tbl_df[460 x 4]&gt;, &lt;tbl_df[460 x 4…
 ## $ validate &lt;list&gt; [&lt;tbl_df[116 x 4]&gt;, &lt;tbl_df[116 x 4]&gt;, &lt;tbl_df[116 x 4…
 ## $ mtry     &lt;int&gt; 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3
-## $ rf_model &lt;list&gt; [&lt;0.2360, 0.4114, 0.5433, 0.7181, 0.6184, 0.5692, 0.67…</code></pre>
+## $ rf_model &lt;list&gt; [&lt;0.201877, 0.267314, 0.570314, 0.631848, 0.661379, 0.…</code></pre>
 <pre class="r"><code># Generate validate predictions for each model
 cv_prep_tunerf &lt;- cv_model_tunerf %&gt;% 
   mutate(rf_validate_actual = map(validate, ~.x$target),
@@ -361,15 +370,30 @@ cv_eval_tunerf %&gt;%
   summarise(rf_mean_mae = mean(rf_validate_mae))</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":["mtry"],"name":[1],"type":["int"],"align":["right"]},{"label":["rf_mean_mae"],"name":[2],"type":["dbl"],"align":["right"]}],"data":[{"1":"1","2":"0.3"},{"1":"2","2":"0.3"},{"1":"3","2":"0.3"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["mtry"],"name":[1],"type":["int"],"align":["right"]},{"label":["rf_mean_mae"],"name":[2],"type":["dbl"],"align":["right"]}],"data":[{"1":"1","2":"0.3030"},{"1":"2","2":"0.3000"},{"1":"3","2":"0.3008"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
-<p>Selected random forest model with the lowest average mae</p>
-<pre class="r"><code>best &lt;- filter(cv_eval_tunerf, rf_validate_mae == min(cv_eval_tunerf$rf_validate_mae))</code></pre>
+<p>Select random forest model with the lowest average mae.</p>
+<pre class="r"><code>best &lt;- filter(cv_eval_tunerf, rf_validate_mae == min(cv_eval_tunerf$rf_validate_mae))
+kable(tibble(id = best$id, mtry = best$mtry))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">id</th>
+<th align="right">mtry</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Fold5</td>
+<td align="right">2</td>
+</tr>
+</tbody>
+</table>
 <p>Use these parameters to traing our best rf model.</p>
 <pre class="r"><code># Build the model using all training data and the best performing parameter
 best_model &lt;- ranger(formula = target~., data = training,
-                     mtry = 3, num.trees = 100, seed = 123)</code></pre>
+                     mtry = best$mtry, num.trees = n_trees)</code></pre>
 </div>
 </div>
 <div id="model-output-on-test-data" class="section level1">
@@ -386,9 +410,10 @@ best_model &lt;- ranger(formula = target~., data = training,
 ## )</code></pre>
 <pre class="r"><code>names(test_data) &lt;- c(&quot;id&quot;, &quot;recency&quot;, &quot;freq&quot;, &quot;vol&quot;, &quot;time&quot;)
 # remove id
-test_data &lt;- test_data[,-1]</code></pre>
+test &lt;- select(test_data,-id, -vol)</code></pre>
 <pre class="r"><code># Predict life_expectancy for the testing_data
-test_predicted &lt;- predict(best_model, test_data)$predictions</code></pre>
+test_predicted &lt;- predict(best_model, test)$predictions
+rf_test_prediction &lt;- cbind(test_data$id, test_predicted)</code></pre>
 </div>
 <div id="discussion" class="section level1">
 <h1>Discussion</h1>

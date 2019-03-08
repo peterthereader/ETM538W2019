@@ -1,8 +1,9 @@
 ---
 title: "Blood Donation Classification Prediction"
 author: "Andey Nunes"
-date: "3/2/2019"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 subtitle: using Cross Validation with Random Forest
@@ -18,7 +19,7 @@ packages <- c("corrplot", "knitr", "Metrics", "ranger", "rsample", "tidyverse")
 
 lapply(packages, require, character.only = T)
 
-options(digits = 2, scipen = 999)
+options(digits = 4, scipen = 999)
 
 set.seed(123)
 ```
@@ -68,6 +69,8 @@ training <- select(training, -vol)
 
 # Cross Validation Folds & Splits
 
+The workflow and code used here is adapted from the *Machine Learning in the Tidyverse* course by Dmitriy Gorenshteyn (DataCamp 2019). The approach involves using list-columns to store list objects (such as model output) in a tibble, which is a special R data frame. These lists can then be iterated over with specialized `map` functions from the `purrr` package to calculate and extract information.
+
 Using the training data, we will create a 5-fold cross-validation split tibble. This will set us up to itertively generate multiple models on our new train/validation subsets.
 
 ```{r create vfold}
@@ -95,18 +98,20 @@ cv_models_lm <- cv_data %>%
 ```
 
 
-### knn ?
-
+### other models
+use the linear model and random forest model code chunks as examples for making another object holding the cross-validation data sets and the specified models.
 
 
 
 ### random forest
 
-```{r}
+```{r random forest model}
+# set forest parameter
+n_trees <- 500
 # Build a random forest model for each fold
 cv_models_rf <- cv_data %>% 
   mutate(rf_model = map(train, ~ranger(formula = target~., data = .x,
-                                    num.trees = 100, seed = 123)))
+                                    num.trees = n_trees,)))
 ```
 
 
@@ -118,18 +123,28 @@ cv_models_rf <- cv_data %>%
 The *cross-validation model evaluation process* follows the same general set of steps iterated over each fold:
 1. extract the actual target values from the validation set
 2. use the models to make target predictions that will be compared to the actual target
-3. for each fold, calculate the Mean Absolute Error (`MAE`) where $ MAE = \frac{\sum^n_{i=1}|Actual_i - Predicted_i|}{n} $
-4. Take the average over all MAE values to determine with model performs best on these sets of training & validation splits
+3. for each fold, calculate the Mean Absolute Error (`MAE`) where $$ MAE = \frac{\sum^n_{i=1}|Actual_i - Predicted_i|}{n} $$
+4. Take the average over all MAE values to determine which model performs best on these sets of training & validation splits
+
+In the following subsections, the eval code chunk follows a similar pattern: 
+
++ the *actual* and *predicted* values are extracted from the validation sets into a `cv_prep_`
+
+
+Lets see how other models and randocompared.
 
 ### linear model
 
-```{r lm eval}
+```{r lm predict}
 # extract actual values
 cv_prep_lm <- cv_models_lm %>%
    mutate(validate_actual = map(validate, ~.x$target),
           validate_predicted = map2(.x = lm_model, .y = validate, 
                                     ~predict(.x, .y)))
+```
 
+
+```{r lm eval}
 # the function mae() is from library(Metrics)
 # Calculate the mean absolute error for each validate fold 
 cv_eval_lm <- cv_prep_lm %>% 
@@ -144,12 +159,10 @@ cv_eval_lm$validate_mae
 
 The average mean absolute error across all linear models was `r mean(cv_eval_lm$validate_mae)`.
 
-Lets see how other models compared.
-
-### knn ?
 
 
-
+### other models
+use the linear model and random forest model code chunks as examples for making another object holding the cross-validation data sets and the specified models.
 
 ### random forest
 
@@ -173,7 +186,7 @@ cv_eval_rf$validate_mae
 mean(cv_eval_rf$validate_mae)
 ```
 
-Tune hyper-parameters
+**Tune hyper-parameters**
 
 ```{r hyper parameters}
 
@@ -186,7 +199,7 @@ cv_model_tunerf <- cv_tune %>%
   mutate(rf_model = 
             map2(.x = train, .y = mtry, 
                  ~ranger(formula = target~., data = .x, 
-                         mtry = .y, num.trees = 100, seed = 123)))
+                         mtry = .y, num.trees = n_trees)))
 
 glimpse(cv_model_tunerf) 
 ```
@@ -206,19 +219,21 @@ cv_eval_tunerf <- cv_prep_tunerf %>%
 cv_eval_tunerf %>% 
   group_by(mtry) %>% 
   summarise(rf_mean_mae = mean(rf_validate_mae))
+
 ```
 
-Selected random forest model with the lowest average mae
+Select random forest model with the lowest average mae.
 
 ```{r best mtry}
 best <- filter(cv_eval_tunerf, rf_validate_mae == min(cv_eval_tunerf$rf_validate_mae))
+kable(tibble(id = best$id, mtry = best$mtry))
 ```
 
 Use these parameters to traing our best rf model.
 ```{r select best rf model}
 # Build the model using all training data and the best performing parameter
 best_model <- ranger(formula = target~., data = training,
-                     mtry = 3, num.trees = 100, seed = 123)
+                     mtry = best$mtry, num.trees = n_trees)
 ```
 
 
@@ -228,13 +243,15 @@ best_model <- ranger(formula = target~., data = training,
 test_data <- read_csv("project test data.csv")
 names(test_data) <- c("id", "recency", "freq", "vol", "time")
 # remove id
-test_data <- test_data[,-1]
+test <- select(test_data,-id, -vol)
 ```
 
 
 ```{r predict test data vector}
 # Predict life_expectancy for the testing_data
-test_predicted <- predict(best_model, test_data)$predictions
+test_predicted <- predict(best_model, test)$predictions
+rf_test_prediction <- cbind(test_data$id, test_predicted)
+
 ```
 
 
@@ -253,6 +270,9 @@ Code examples were borrowed from DataCamp course material presented by Dmitriy G
 
 # Appendix
 
+```{r random forest predicted test vector, include=F, eval=F}
+kable(rf_test_prediction)
+```
 
 
 
