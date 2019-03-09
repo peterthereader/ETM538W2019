@@ -14,15 +14,15 @@ We're going to use the nearest neighbors method to predict blood donations. Let'
 
 ```{r load}
 data<-read.csv("projectdata.csv")
-instances<-data[-c(1,6)] ##drop the index column and the result column for working purposes
+instances<-data[-c(1,4,6)] ##drop the index column and the result column for working purposes
 ```
 
 Now we'll assign weights and scale the data columns by the assigned weights. To start, we just scaled each column by the maximum value.
 
 ```{r assignweights}
 weights<-c(1/74,1/50,1/12500,1/98) ## make a vector of independent variable weights, scaling each by the max value to start
-names(weights)<-c("monthssincelast", "numberdonations", "totalvolume", "monthssincefirst")  ##name them so we don't forget
-scaledinstances<-cbind(instances[,1]*weights[1],instances[,2]*weights[2],instances[,3]*weights[3],instances[,4]*weights[4])
+names(weights)<-c("monthssincelast", "numberdonations", "monthssincefirst")  ##name them so we don't forget
+scaledinstances<-cbind(instances[,1]*weights[1],instances[,2]*weights[2],instances[,3]*weights[3])
 ## make a scaled version of our instances so that the distances are equivalent
 ```
 
@@ -119,11 +119,11 @@ Excellent, the professionals have reduced our error rate by almost half. Let's q
 
 ```{r predictions}
 testdata<-read.csv("project test data.csv")
-testdata<-testdata[-c(1,6)]
-testdata<-cbind(testdata[,1]*weights[1],testdata[,2]*weights[2],testdata[,3]*weights[3],testdata[,4]*weights[4])
+testdata<-testdata[-c(1,4,6)]
+testdata<-cbind(testdata[,1]*weights[1],testdata[,2]*weights[2],testdata[,3]*weights[3])
 train<-scaledinstances
 test<-testdata
 cl<-data[,6]
-libraryfullresults<-knn(train, test, cl, k=3, prob=TRUE)
+libraryfullresults<-knn(train, test, cl, k=, prob=TRUE)
 head(libraryfullresults)
 ```
