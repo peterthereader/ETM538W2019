@@ -8,6 +8,7 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(class)
+library(pander)
 ```
 
 We're going to use the nearest neighbors method to predict blood donations. Let's first load our data, then drop the index column and the result column for our working data:
@@ -33,11 +34,11 @@ practicebucket<-scaledinstances[501:576,]
 databucket<-scaledinstances[1:500,]
 ```
 
-Here we built a little function to help us calculate Manhattan distances between two different points.
+Here we built a little function to help us calculate distances between two different points. We're going to use the Euclidean distance for two reasons; one, it's what the prebuilt nearest-neighbors package uses, and two, some of our data are in numeric form instead of factors, and Euclidean distance is more appropriate for those.
 
 ```{r calculatedistance}
 distance<-function(x,y){
-  result<-dist(rbind(x,y), method="manhattan") ## find the manhattan distance between two instances
+  result<-dist(rbind(x,y), method="euclidean") ## find the manhattan distance between two instances
   return(as.numeric(result)) #the result is weirdly vectorized so we just grab the value out of it
 }
 ```
@@ -115,7 +116,15 @@ errorrate<-1-correctanswers/length(originaldata)
 errorrate
 ```
 
-Excellent, the professionals have reduced our error rate by almost half. Let's quickly calculate the predictions using the prebuilt library for the test data set for the contest.
+Using the same code, we checked the error rate considering the 1, 2, 3, 4 nearest neighbors:
+
+```{r whichk}
+k<-c(1,2,3,4)
+error<-c("18.4%", "13.1%", "9.2%",  "10.5%")
+pander(cbind(k,error))
+```
+
+We should clearly consider the 3 nearest neighbors, since error rate actually goes up at $k=4$, and we'd like to avoid overfitting. Note that the built-in package has slightly smaller error than our manual work even at $k=1$, and that at $k=3$ the error rate is half of what it was in our original work.  As a conclusion here are the predictions that our method makes for the test data the contest gives us.
 
 ```{r predictions}
 testdata<-read.csv("project test data.csv")
